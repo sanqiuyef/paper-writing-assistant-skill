@@ -23,7 +23,11 @@ class StructureTest(unittest.TestCase):
 
     def test_referenced_files_exist(self) -> None:
         text = (ROOT / "SKILL.md").read_text(encoding="utf-8")
-        referenced = set(re.findall(r"`((?:scripts|references|assets|templates|config|tests)/[^`]+)`", text))
+        referenced = {
+            path
+            for path in re.findall(r"`((?:scripts|references|assets|templates|config|tests)/[^`]+)`", text)
+            if "<" not in path and "*" not in path
+        }
         missing = [path for path in referenced if not (ROOT / path).exists()]
         self.assertEqual(missing, [], f"SKILL.md 引用了不存在的路径: {missing}")
 
