@@ -75,6 +75,34 @@ class AiStyleTest(unittest.TestCase):
         result = run_check(text)
         self.assertEqual(result["metrics"]["paragraphs"], 1)
 
+    def test_cnki_vo_pile(self) -> None:
+        text = "本章梳理了概念，界定了范围，对比分析了已有方法，论证了可行性，给出了结论。"
+        result = run_check(text)
+        self.assertIn("CNKI_VO_PILE", codes(result))
+
+    def test_cnki_noun_chain(self) -> None:
+        text = (
+            "本章梳理了灾后应急物流的概念内涵与场景特点，界定了研究对象。"
+            "该模型的核心优势与适用范围仍需讨论。"
+        )
+        result = run_check(text)
+        self.assertIn("CNKI_NOUN_CHAIN", codes(result))
+
+    def test_cnki_adj_noun_repeat(self) -> None:
+        text = "该工作具有重要意义。该指标具有重要意义。该结论同样具有重要意义。"
+        result = run_check(text)
+        self.assertIn("CNKI_ADJ_NOUN_REPEAT", codes(result))
+
+    def test_cnki_long_sentences(self) -> None:
+        long_sentence = (
+            "本文在松北区二十一场降雨与多个重现期情景上对代理模型的误差和区间覆盖率"
+            "进行了系统比较并讨论了其在不同降雨强度下的变化趋势与适用范围以及计算成本"
+            "与部署限制" * 2 + "。"
+        )
+        text = long_sentence + "\n\n" + long_sentence + "\n\n短句一。短句二。短句三。"
+        result = run_check(text)
+        self.assertIn("CNKI_LONG_SENTENCE", codes(result))
+
 
 if __name__ == "__main__":
     unittest.main()

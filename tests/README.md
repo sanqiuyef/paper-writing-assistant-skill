@@ -3,7 +3,7 @@
 | 套件 | 命令 | 内容 |
 |:---|:---|:---|
 | 契约/结构 | `python -m unittest discover -s tests -v` | 入口、固定输出、退出码、LaTeX、事实核对、防御性、AI 结构 |
-| 合成回归 | `python tests/run_regression.py --verbose` | `regression_cases.json` 中 17 条自写段落 |
+| 合成回归 | `python tests/run_regression.py --verbose` | `regression_cases.json` 中 19 条自写段落 |
 | 真实段落回归 | `python tests/build_regression_local.py --source <草稿> --limit 30` | 生成 `regression_local/cases.json`（gitignored） |
 | 触发评测 | `python tests/evaluate_triggers.py [--llm]` | `trigger_cases.json` 的 15 正 / 10 负样例 |
 

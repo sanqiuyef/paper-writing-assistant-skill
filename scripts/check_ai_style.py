@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""AI 写作风格的结构化检测：模板腔、节奏均质、证据密度、连接词堆叠。
+"""AI 写作风格的结构化检测：模板腔、节奏均质、证据密度、连接词堆叠、知网句式。
 
 与 check_academic_language.py 的分工：
 - 后者查词表（局部用词）；
 - 本脚本查段落/句群结构（模板化、无具体信息、节奏过匀），并输出三层：
   FAIL = 结构性模板腔；WARN = 可疑写作习惯；INFO = 个性化风格提示。
+知网句式（动宾+了、A的B与C、形容词+名词重复、长句）来自公开视频的个人实测，
+是经验规则而非官方口径。
 """
 
 from __future__ import annotations
@@ -24,6 +26,19 @@ AI_WORDS = (
     "值得注意的是", "综上所述", "具体而言", "赋能", "闭环", "协同", "范式",
     "全面提升", "显著提升", "深度赋能", "底层逻辑", "抓手", "痛点",
 )
+VO_PATTERN = re.compile(
+    r"(?:研究|发现|提出|明确|揭示|梳理|界定|对比分析|论证|给出|构建|设计|"
+    r"采用|验证|分析|总结|阐述|探讨|评估|优化|改进|实现|建立|形成|划分|"
+    r"识别|提取|计算|模拟|预测|比较|讨论|说明|证明|表明)了"
+)
+NOUN_CHAIN_PATTERN = re.compile(
+    r"[\u4e00-\u9fff]{2,8}的[\u4e00-\u9fff]{2,8}(?:与|和)[\u4e00-\u9fff]{2,8}"
+)
+ADJ_NOUN_PATTERN = (
+    "重要意义", "重要作用", "核心特征", "关键问题", "主要方法", "显著提升",
+    "有效手段", "重要价值", "理论基础", "实践意义", "突出贡献", "明显优势",
+)
+LONG_SENTENCE_CHARS = 80
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -196,6 +211,77 @@ def run(args: argparse.Namespace) -> dict:
             }
         )
 
+    # 知网 2026-10 更新后常见的两类句式（经验规则，非官方口径）。
+    vo_hot = []
+    vo_total = 0
+    for paragraph in paragraphs:
+        hits = VO_PATTERN.findall(paragraph)
+        vo_total += len(hits)
+        sentence_counts = [len(VO_PATTERN.findall(item)) for item in split_sentences(paragraph)]
+        max_in_sentence = max(sentence_counts) if sentence_counts else 0
+        if len(hits) >= 6 or max_in_sentence >= 3:
+            vo_hot.append((paragraph, len(hits), max_in_sentence))
+    if vo_hot:
+        issues.append(
+            {
+                "severity": "WARN",
+                "code": "CNKI_VO_PILE",
+                "message": f"动宾+“了”句式扎堆（{sum(item[1] for item in vo_hot)} 处，涉及 {len(vo_hot)} 段）",
+                "examples": [f"{item[0][:80]}（{item[1]} 处，单句最多 {item[2]}）" for item in vo_hot[:3]],
+                "suggestion": "换语序而不是删内容：'梳理了X'→'对X进行梳理'，'明确了Y'→'将Y明确'；保留专业表述。",
+            }
+        )
+
+    noun_hot = []
+    for paragraph in paragraphs:
+        hits = [match.group(0) for match in NOUN_CHAIN_PATTERN.finditer(paragraph)]
+        if len(hits) >= 2:
+            noun_hot.append((paragraph, hits))
+    noun_chains = [chain for _, hits in noun_hot for chain in hits]
+    if noun_hot:
+        issues.append(
+            {
+                "severity": "WARN",
+                "code": "CNKI_NOUN_CHAIN",
+                "message": f"同一段出现 ≥2 处 A的B与C 型名词串（{len(noun_hot)} 段）",
+                "examples": [
+                    f"{paragraph[:70]}（{'、'.join(dict.fromkeys(hits))}）"
+                    for paragraph, hits in noun_hot[:3]
+                ],
+                "suggestion": "拆开名词串：'A的B与C'→'A的B；C...'；'X的两大特征'→'X的特征有两个：...'。",
+            }
+        )
+
+    repeated_adj_noun = [
+        f"{word}×{text.count(word)}"
+        for word in ADJ_NOUN_PATTERN
+        if text.count(word) >= 2
+    ]
+    adj_counts = {word: text.count(word) for word in ADJ_NOUN_PATTERN}
+    if (any(count >= 3 for count in adj_counts.values()) or len(repeated_adj_noun) >= 3):
+        issues.append(
+            {
+                "severity": "WARN",
+                "code": "CNKI_ADJ_NOUN_REPEAT",
+                "message": f"形容词+名词组合重复（{len(repeated_adj_noun)} 组）",
+                "examples": repeated_adj_noun[:6],
+                "suggestion": "拆散重复组合，换成具体对象、条件或数据，不要只换同义词。",
+            }
+        )
+
+    long_sentences = [item for item in sentences if len(item) > LONG_SENTENCE_CHARS]
+    long_ratio = len(long_sentences) / len(sentences) if sentences else 0.0
+    if len(sentences) >= 5 and len(long_sentences) >= 2 and long_ratio >= 0.2:
+        issues.append(
+            {
+                "severity": "WARN",
+                "code": "CNKI_LONG_SENTENCE",
+                "message": f"{len(long_sentences)}/{len(sentences)} 句超过 {LONG_SENTENCE_CHARS} 字（{long_ratio:.0%}）",
+                "examples": [item[:100] for item in long_sentences[:2]],
+                "suggestion": "长句拆短、短句合并，避免整段句长与结构过于均匀。",
+            }
+        )
+
     fail = sum(1 for item in issues if item["severity"] == "FAIL")
     warn = sum(1 for item in issues if item["severity"] == "WARN")
     info = sum(1 for item in issues if item["severity"] == "INFO")
@@ -216,9 +302,13 @@ def run(args: argparse.Namespace) -> dict:
             "ordinal_paragraphs": len(ordinal_paragraphs),
             "transition_ratio": round(transition_ratio, 3),
             "ai_word_density_per_1000": round(ai_word_density, 2),
+            "vo_le_total": vo_total,
+            "noun_chains": len(noun_chains),
+            "repeated_adj_noun": len(repeated_adj_noun),
+            "long_sentences": len(long_sentences),
         },
         "issues": issues,
-        "note": "结构检测只提示模板化与信息密度，不判断是否由 AI 生成；最终以人工读稿为准。",
+        "note": "结构检测只提示模板化与信息密度，不判断是否由 AI 生成；知网句式规则为经验规则、非官方口径，最终以人工读稿与学校指定平台复检为准。",
     }
 
 

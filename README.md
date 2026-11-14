@@ -136,7 +136,7 @@ stdout 始终是一个 JSON 对象：
 python -X utf8 -m unittest discover -s tests -v
 ```
 
-覆盖 10 个入口、LaTeX 掩蔽、事实核对、防御性检测、AI 结构检测、固定输出对照、退出码 1/2/3、结构检查与 MCP 独立性。有意改行为后先运行：
+覆盖 10 个入口、LaTeX 掩蔽、事实核对、防御性检测、AI 结构检测、固定输出对照、退出码 1/2/3、结构检查与 MCP 独立性；当前 36 项 unittest 全部通过。有意改行为后先运行：
 
 ```bash
 python -X utf8 tests/update_expected.py
@@ -150,7 +150,7 @@ python -X utf8 tests/update_expected.py
 python -X utf8 tests/run_regression.py --verbose
 ```
 
-`tests/regression_cases.json` 含 17 条自写段落，覆盖正常方法/结果、真实局限、自贬、叠甲、预演质疑、过程汇报、括号摊底、叠层模糊、边界重复、过度主张、模板腔、Word 残留与 LaTeX 保护。判定写回 `checks.verdict`，改动检测器后用 `--write-expected` 更新并复核。
+`tests/regression_cases.json` 含 19 条自写段落，覆盖正常方法/结果、真实局限、自贬、叠甲、预演质疑、过程汇报、括号摊底、叠层模糊、边界重复、过度主张、模板腔、知网句式、Word 残留与 LaTeX 保护。判定写回 `checks.verdict`，改动检测器后用 `--write-expected` 更新并复核。
 
 ### 真实论文段落回归（本地）
 
@@ -202,7 +202,7 @@ paper-writing-assistant/
 ## 已知边界
 
 - `lint_writing.py` 与 `check_defensive_writing.py` 是启发式检测：词表与正则只提示可能性，误报/漏报都存在，判定以整节或全文为准，最终由作者复核。
-- `check_ai_style.py` 检测段落结构（模板网格、节奏、证据密度），不判断文本是否由 AI 生成；FAIL 只代表结构高度模板化。
+- `check_ai_style.py` 检测段落结构（模板网格、节奏、证据密度），不判断文本是否由 AI 生成；FAIL 只代表结构高度模板化。`CNKI_*` 规则来自公开视频的个人实测（2026-10-24 知网更新），是经验规则而非官方口径，不能用于规避检测。
 - 防御性检测不判断“这条局限是否必须报告”。真实局限在讨论章保留一次是合规写作，`--section discussion` 会把自贬类降为 WARN。
 - `rewrite_academic_text.py` 只保证不改动数值 token 并标出新增数值；语义等价、引用归属与单位一致性仍需人工核对。
 - 默认面向方法-实验类论文；人文社科、纯综述使用时，把“指标、实验、对照”等规则改写为对应的论证单位（论点、材料、案例、比较对象）。

@@ -169,6 +169,24 @@
       }
     },
     {
+      "id": "cnki_vo_noun",
+      "text": "本章梳理了灾后应急物流的概念内涵与场景特点，界定了研究对象，对比分析了已有方法，论证了可行性，给出了结论。该模型的核心优势与适用范围仍需讨论。",
+      "checks": {
+        "ai_style": {
+          "verdict": "WARN"
+        }
+      }
+    },
+    {
+      "id": "cnki_adj_repeat",
+      "text": "该工作具有重要意义。该指标具有重要意义。该结论同样具有重要意义。",
+      "checks": {
+        "ai_style": {
+          "verdict": "WARN"
+        }
+      }
+    },
+    {
       "id": "latex_math_protected",
       "text": "$$x_1=y_1$$ 与 \\cite{model_v1} 均不应被改写。",
       "checks": {

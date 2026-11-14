@@ -26,7 +26,7 @@ python -X utf8 scripts/<脚本名>.py
 | 脚本 | 用途 | 关键参数 | 输出要点 |
 |:---|:---|:---|:---|
 | `check_academic_language.py` | 语料级 AI 标记词检查，给替换建议 | `--text`/`--input-file`、`--language auto/zh/en` | `data.status`（clean/issues_found）、`data.findings[]`（pattern/context/position） |
-| `check_ai_style.py` | 结构级 AI 风格检测：模板腔、节奏均质、证据密度、连接词堆叠、AI 词密度 | `--text`/`--input-file`、`--language` | `data.verdict`、`metrics`、`issues[]`；FAIL=模板网格，其余多为 WARN/INFO |
+| `check_ai_style.py` | 结构级 AI 风格检测：模板腔、节奏均质、证据密度、连接词堆叠、AI 词密度、知网句式（动宾+“了”、`A的B与C`、形容词+名词重复、长句） | `--text`/`--input-file`、`--language` | `data.verdict`、`metrics`、`issues[]`；FAIL=模板网格，其余多为 WARN/INFO |
 | `replace_ai_phrases.py` | AI 腔用词检测；`--apply` 时插入 `[[建议]]` 占位符 | `--text`/`--input-file`、`--language`、`--apply` | `data.details[]`、`data.result_text`；默认 dry-run |
 | `fill_section_template.py` | 取章节/投稿信/审稿回复模板，注入 `{{占位符}}` | `--section`、`--params`/`--params-file`、`--language`、`--paper-type`、`--profile` | `data.template`、`data.template_id`、`data.evidence_basis` |
 | `generate_outline.py` | 生成章节结构与配图方案 | `--language`、`--paper-type`、`--profile` | `data.sections[]`、`data.figures[]` |
@@ -106,7 +106,7 @@ Stage 0 问询 → 起草/改写 → 机检门控 → AI 读稿自审（≤3 轮
 - `data.verdict=WARN` → 逐项评估，决定是否回改
 - **防御性检测**：摘要、引言、结论**必跑**；正文其他章节在涉及局限、对比或负结果时跑。FAIL 级（自贬、否定叠甲、预演质疑、叠层模糊、摘要/结论开头自贬）必须改；WARN 级（过程汇报、括号摊底、第一人称、边界重复、反向夸大）逐条判断
 - **事实核对**：只要有原文/改稿对，必须跑 `fact_integrity_check.py --original 原稿 --revised 改稿`；数值缺失/新增、单位变化、引用增减、结论方向反转均为 FAIL，必须回改；数值顺序变化为 WARN，核对指代是否受影响
-- **结构风格（可选）**：被指“读着像 AI/模板腔”或改写前，跑 `check_ai_style.py` 看段落结构；`AI_TEMPLATE_GRID`（连续序数开头 + 句数一致）为 FAIL，必须重排段落；`AI_UNIFORM_RHYTHM`/`AI_LOW_SPECIFICITY` 为 WARN，结合证据判断；AI 词密度仅 INFO
+- **结构风格（可选）**：被指“读着像 AI/模板腔”或改写前，跑 `check_ai_style.py` 看段落结构；`AI_TEMPLATE_GRID`（连续序数开头 + 句数一致）为 FAIL，必须重排段落；`AI_UNIFORM_RHYTHM`/`AI_LOW_SPECIFICITY`/`CNKI_*` 为 WARN，结合证据判断；AI 词密度仅 INFO。知网句式规则是经验规则、非官方口径，不能用来规避检测
 - 同一轮依次跑 `check_academic_language.py` 做语料级 AI 词检查；LaTeX 载体加 `latex_sanitize.py --fix`
 - 门控结论以整节或全文为准：`lint_writing` 按密度判定，几百字片段里一两处符号就可能越线
 - 防御性检测只报不改：真实边界按证据保留一次并正面表述，删除防御不得反向升级为“首次/唯一/全面领先”
@@ -215,6 +215,7 @@ Quick Mode 可只交 Part 1 + 一句话改动摘要；Deep Mode 三段齐全。�
 | `references/journal_styles.md` | Nature/Science/IEEE/中文核心等期刊风格路由 |
 | `references/prompt_library.md` | 18 个写作任务剧本（翻译/润色/缩写/扩写/实验分析/caption 等） |
 | `references/anti_defensive_writing.md` | 发布会原则完整版（叙事/语言/实验/结构/决策优先级/证据边界/快速提示词） |
+| `references/cnki_aigc_patterns.md` | 知网 2026-10 更新后的句式经验（动宾+“了”扎堆、`A的B与C` 名词串、形容词+名词重复、长句），含改写示例与误判边界 |
 
 ## 工程化文件
 
