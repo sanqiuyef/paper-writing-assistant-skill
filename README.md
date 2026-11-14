@@ -11,6 +11,7 @@
 | `fill_section_template.py` | 章节 / 投稿信 / 审稿回复模板，支持 `{{占位符}}` |
 | `generate_outline.py` | 论文大纲与配图方案 |
 | `rewrite_academic_text.py` | DeepSeek 降 AI 味改写，带数字编造防线；`--dry-run` 只组装提示词、不发请求 |
+| `fact_integrity_check.py` | 对比原文/改写稿的数值、单位、引用、术语与结论方向 |
 | `lint_writing.py` | 确定性写作质量门控，PASS / WARN / FAIL |
 | `check_defensive_writing.py` | 防御性写作检测：自贬、叠甲、预演质疑、过程汇报、括号摊底、叠层模糊、边界重复、反向夸大 |
 | `latex_sanitize.py` | LaTeX 转义体检与修复 |
@@ -81,6 +82,9 @@ python -X utf8 scripts/rewrite_academic_text.py --input-file section3.md --style
 # 5b) 不外发：只组装提示词，交给宿主 agent 改写
 python -X utf8 scripts/rewrite_academic_text.py --input-file section3.md --dry-run
 
+# 5c) 事实核对：数值/单位/引用/术语/结论方向
+python -X utf8 scripts/fact_integrity_check.py --original section3_original.md --revised section3_revised.md --terms KAN-PC
+
 # 6) 防御性写作检测（摘要/结论加 --section；终稿可加 --strict）
 python -X utf8 scripts/check_defensive_writing.py --input-file section3.md --section results
 ```
@@ -128,7 +132,7 @@ stdout 始终是一个 JSON 对象：
 python -X utf8 -m unittest discover -s tests -v
 ```
 
-覆盖 8 个入口、固定输出对照、退出码 1/2/3、结构检查与 MCP 独立性。有意改行为后先运行：
+覆盖 9 个入口、固定输出对照、退出码 1/2/3、结构检查与 MCP 独立性。有意改行为后先运行：
 
 ```bash
 python -X utf8 tests/update_expected.py
@@ -159,7 +163,7 @@ paper-writing-assistant/
 │   ├── corpus.example/        # 范文结构示例（不含第三方原文）
 │   └── corpus/                # 个人范文（gitignore）
 ├── references/                # 写作规范、章节 playbook、期刊风格、去 AI 味手册
-├── scripts/                   # 8 入口 + 共享模块 + 规则引擎 + 词库/防御性规则
+├── scripts/                   # 9 入口 + 共享模块 + 规则引擎 + 词库/防御性规则
 └── tests/                     # 契约测试、期望输出、人工评测提示词
 ```
 

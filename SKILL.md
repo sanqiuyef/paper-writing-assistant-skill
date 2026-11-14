@@ -30,6 +30,7 @@ python -X utf8 scripts/<脚本名>.py
 | `fill_section_template.py` | 取章节/投稿信/审稿回复模板，注入 `{{占位符}}` | `--section`、`--params`/`--params-file`、`--language`、`--paper-type`、`--profile` | `data.template`、`data.template_id`、`data.evidence_basis` |
 | `generate_outline.py` | 生成章节结构与配图方案 | `--language`、`--paper-type`、`--profile` | `data.sections[]`、`data.figures[]` |
 | `rewrite_academic_text.py` | DeepSeek 降 AI 味改写，带数字编造防线；`--dry-run` 只组装提示词、不发请求 | `--text`/`--input-file`、`--style`、`--language`、`--reference-texts`/`--reference-file`、`--corpus`、`--kb`、`--kb-dir`、`--temperature`、`--dry-run` | `data.rewritten`、`changes`、`preserved_facts`、`risks`；`--dry-run` 返回 `system_prompt`/`user_prompt`；在线调用需 `DEEPSEEK_API_KEY` |
+| `fact_integrity_check.py` | 对比原文/改写稿的数值、单位、引用、术语与结论方向 | `--original`、`--revised`、`--terms`/`--terms-file`、`--bracket-citations`、`--no-directions` | `data.verdict`、`issues[]`（缺失/新增/单位变化/方向反转）；**退出码 1 = FAIL** |
 | `lint_writing.py` | 确定性写作质量门控，返回 PASS/WARN/FAIL | `--text`/`--input-file`、`--mode plain/word/docx/markdown/latex`、`--language` | `data.verdict`、`fail/warn/info`、`issues[]`；**退出码 1 = FAIL，不是执行失败** |
 | `check_defensive_writing.py` | 防御性写作检测：自贬、叠甲、预演质疑、过程汇报、括号摊底、叠层模糊、边界重复、反向夸大 | `--text`/`--input-file`、`--section body/abstract/introduction/results/discussion/conclusion`、`--strict` | `data.verdict`、`issues[]`（severity/code/line/count/examples/suggestion）；**退出码 1 = FAIL** |
 | `latex_sanitize.py` | LaTeX 转义体检；`--fix` 返回修复稿 | `--text`/`--input-file`、`--fix` | `data.problems[]`（severity/message）、`fixed_text`、`changed` |
@@ -55,6 +56,9 @@ python -X utf8 scripts/rewrite_academic_text.py --input-file 第3节.md --style 
 # 5b) 不外发：只组装提示词，交给宿主 agent 改写
 python -X utf8 scripts/rewrite_academic_text.py --input-file 第3节.md --dry-run
 
+# 5c) 事实核对：数值/单位/引用/术语/结论方向
+python -X utf8 scripts/fact_integrity_check.py --original 第3节_原稿.md --revised 第3节_改稿.md --terms KAN-PC
+
 # 6) 防御性写作检测（摘要/结论建议加 --section；终稿可加 --strict）
 python -X utf8 scripts/check_defensive_writing.py --input-file 第3节.md --section results
 ```
@@ -67,7 +71,7 @@ python -X utf8 scripts/check_defensive_writing.py --input-file 第3节.md --sect
 |:---|:---|
 | 中文段落润色 | `lint_writing` 定位问题 → agent 改写 → `check_academic_language` 查 AI 词 → `lint_writing` 复检 |
 | 英文润色 / 中译英 | `lint_writing --mode latex`（若为 LaTeX）→ agent 改写 → `latex_sanitize --fix` → 复检 |
-| 降 AI 味 | `rewrite_academic_text --kb zh`（或 `--reference-file` 传 lancedb 命中段落）→ agent 按 `changes/risks` 复核 → `lint_writing` |
+| 降 AI 味 | `rewrite_academic_text --kb zh`（或 `--reference-file` 传 lancedb 命中段落）→ `fact_integrity_check` 核对数字/引用 → agent 按 `changes/risks` 复核 → `lint_writing` |
 | 防御性写作清理 | `check_defensive_writing --section` 定位 → agent 按 `suggestion` 逐条改写（真实边界保留一次）→ 复检；摘要/结论必跑 |
 | 写某章节 | `generate_outline` 取结构 → `fill_section_template --section` 取骨架 → agent 起草 → 机检 |
 | 投稿信 / 审稿回复 | `fill_section_template --section cover_letter/rebuttal` → agent 填充 → `lint_writing` |
@@ -99,6 +103,7 @@ Stage 0 问询 → 起草/改写 → 机检门控 → AI 读稿自审（≤3 轮
 - `data.verdict=FAIL`（退出码 1）→ 必须修复后复检，不得假装通过、不得伪造检查结果
 - `data.verdict=WARN` → 逐项评估，决定是否回改
 - **防御性检测**：摘要、引言、结论**必跑**；正文其他章节在涉及局限、对比或负结果时跑。FAIL 级（自贬、否定叠甲、预演质疑、叠层模糊、摘要/结论开头自贬）必须改；WARN 级（过程汇报、括号摊底、第一人称、边界重复、反向夸大）逐条判断
+- **事实核对**：只要有原文/改稿对，必须跑 `fact_integrity_check.py --original 原稿 --revised 改稿`；数值缺失/新增、单位变化、引用增减、结论方向反转均为 FAIL，必须回改；数值顺序变化为 WARN，核对指代是否受影响
 - 同一轮依次跑 `check_academic_language.py` 做语料级 AI 词检查；LaTeX 载体加 `latex_sanitize.py --fix`
 - 门控结论以整节或全文为准：`lint_writing` 按密度判定，几百字片段里一两处符号就可能越线
 - 防御性检测只报不改：真实边界按证据保留一次并正面表述，删除防御不得反向升级为“首次/唯一/全面领先”

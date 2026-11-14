@@ -41,6 +41,8 @@ class StructureTest(unittest.TestCase):
             "tests/expected_outputs/check_zh.json",
             "scripts/check_defensive_writing.py",
             "scripts/defensive_patterns.json",
+            "scripts/fact_integrity_check.py",
+            "tests/test_fact_integrity.py",
             "templates/cover_letter_zh.md",
             "assets/profiles/general/sections_zh.md",
             "references/anti_defensive_writing.md",

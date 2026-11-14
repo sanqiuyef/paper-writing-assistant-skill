@@ -82,6 +82,7 @@ class ScriptContractTest(unittest.TestCase):
             "fill_section_template.py",
             "generate_outline.py",
             "rewrite_academic_text.py",
+            "fact_integrity_check.py",
             "lint_writing.py",
             "latex_sanitize.py",
             "check_defensive_writing.py",
