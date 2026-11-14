@@ -21,19 +21,30 @@ SKIP_PREFIXES = ("#", "|", "**", ">", "- ", "```", "![")
 NOISE = ("学号", "密级", "指导教师", "原创性声明", "参考文献")
 
 
-def iter_files(source: Path) -> list[Path]:
+def iter_files(source: Path, path_contains: str = "") -> list[Path]:
     if source.is_file():
         return [source]
+    needle = path_contains.lower()
     return sorted(
         path
         for path in source.rglob("*")
         if path.suffix.lower() in {".md", ".txt"}
         and "regression_local" not in path.parts
         and ".git" not in path.parts
+        and (not needle or needle in str(path).lower())
     )
 
 
-def iter_paragraphs(path: Path, min_chars: int, max_chars: int):
+def language_ok(text: str, language: str) -> bool:
+    has_cjk = bool(re.search(r"[\u4e00-\u9fff]", text))
+    if language == "zh":
+        return has_cjk
+    if language == "en":
+        return not has_cjk
+    return True
+
+
+def iter_paragraphs(path: Path, min_chars: int, max_chars: int, language: str):
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
@@ -46,6 +57,8 @@ def iter_paragraphs(path: Path, min_chars: int, max_chars: int):
             continue
         if any(noise in paragraph for noise in NOISE):
             continue
+        if not language_ok(paragraph, language):
+            continue
         yield paragraph
 
 
@@ -55,13 +68,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--limit", type=int, default=30)
     parser.add_argument("--min-chars", type=int, default=200)
     parser.add_argument("--max-chars", type=int, default=1500)
+    parser.add_argument("--language", choices=["auto", "zh", "en"], default="auto")
+    parser.add_argument("--path-contains", default="", help="只取路径含该子串的文件（如 review）")
     parser.add_argument("--out", default=str(DEFAULT_OUT))
     args = parser.parse_args(argv)
 
     source = Path(args.source)
     candidates = []
-    for path in iter_files(source):
-        for paragraph in iter_paragraphs(path, args.min_chars, args.max_chars):
+    for path in iter_files(source, args.path_contains):
+        for paragraph in iter_paragraphs(path, args.min_chars, args.max_chars, args.language):
             candidates.append((path, paragraph))
 
     if not candidates:

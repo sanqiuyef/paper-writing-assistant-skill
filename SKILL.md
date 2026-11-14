@@ -26,7 +26,7 @@ python -X utf8 scripts/<脚本名>.py
 | 脚本 | 用途 | 关键参数 | 输出要点 |
 |:---|:---|:---|:---|
 | `check_academic_language.py` | 语料级 AI 标记词检查，给替换建议 | `--text`/`--input-file`、`--language auto/zh/en` | `data.status`（clean/issues_found）、`data.findings[]`（pattern/context/position） |
-| `check_ai_style.py` | 结构级 AI 风格检测：模板腔、节奏均质、证据密度、连接词堆叠、AI 词密度、知网句式（动宾+“了”、`A的B与C`、形容词+名词重复、长句） | `--text`/`--input-file`、`--language` | `data.verdict`、`metrics`、`issues[]`；FAIL=模板网格，其余多为 WARN/INFO |
+| `check_ai_style.py` | 结构级 AI 风格检测：模板腔、节奏均质、证据密度、连接词堆叠、AI 词密度、知网句式（动宾+“了”、`A的B与C`、形容词+名词重复、长句）；`--report` 导出段落骨架 HTML | `--text`/`--input-file`、`--language`、`--report` | `data.verdict`、`metrics`、`issues[]`、`report_path`；FAIL=模板网格，其余多为 WARN/INFO |
 | `replace_ai_phrases.py` | AI 腔用词检测；`--apply` 时插入 `[[建议]]` 占位符 | `--text`/`--input-file`、`--language`、`--apply` | `data.details[]`、`data.result_text`；默认 dry-run |
 | `fill_section_template.py` | 取章节/投稿信/审稿回复模板，注入 `{{占位符}}` | `--section`、`--params`/`--params-file`、`--language`、`--paper-type`、`--profile` | `data.template`、`data.template_id`、`data.evidence_basis` |
 | `generate_outline.py` | 生成章节结构与配图方案 | `--language`、`--paper-type`、`--profile` | `data.sections[]`、`data.figures[]` |
@@ -52,7 +52,7 @@ python -X utf8 scripts/lint_writing.py --input-file 第3节.md --mode word --lan
 python -X utf8 scripts/latex_sanitize.py --input-file draft.tex --fix
 
 # 5) 降 AI 味：先看结构，再取范文改写
-python -X utf8 scripts/check_ai_style.py --input-file 第3节.md
+python -X utf8 scripts/check_ai_style.py --input-file 第3节.md --report 骨架报告.html
 python -X utf8 scripts/rewrite_academic_text.py --input-file 第3节.md --style academic --kb zh --reference-file 范文片段.md
 
 # 5b) 不外发：只组装提示词，交给宿主 agent 改写

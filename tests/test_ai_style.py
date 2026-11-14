@@ -103,6 +103,24 @@ class AiStyleTest(unittest.TestCase):
         result = run_check(text)
         self.assertIn("CNKI_LONG_SENTENCE", codes(result))
 
+    def test_english_sentence_split(self) -> None:
+        result = run_check(
+            "First sentence. Second sentence. Third sentence. Fourth sentence. Fifth sentence."
+        )
+        self.assertEqual(result["metrics"]["sentences"], 5)
+
+    def test_html_report(self) -> None:
+        import tempfile
+
+        result = run_check(TEMPLATE)
+        with tempfile.TemporaryDirectory() as temp:
+            path = style.build_report(TEMPLATE, result, str(Path(temp) / "report.html"))
+            content = path.read_text(encoding="utf-8")
+        self.assertIn("<!doctype html>", content)
+        self.assertIn("段落骨架", content)
+        self.assertIn("句长网格", content)
+        self.assertIn("AI_TEMPLATE_GRID", content)
+
 
 if __name__ == "__main__":
     unittest.main()

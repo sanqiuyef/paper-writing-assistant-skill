@@ -12,9 +12,11 @@
 from __future__ import annotations
 
 import argparse
+import html
 import re
 import statistics
 from collections import Counter
+from pathlib import Path
 
 import _common as C
 
@@ -51,6 +53,7 @@ def build_parser() -> argparse.ArgumentParser:
     group.add_argument("--text", help="待检查文本")
     group.add_argument("--input-file", help="UTF-8 文本文件路径；- 表示从 stdin 读取")
     parser.add_argument("--language", choices=["auto", "zh", "en"], default="auto")
+    parser.add_argument("--report", help="输出自包含 HTML 段落骨架报告到该路径")
     return parser
 
 
@@ -66,12 +69,12 @@ def split_paragraphs(text: str) -> list[str]:
     return paragraphs
 
 
-def split_sentences(text: str) -> list[str]:
-    return [
-        item.strip()
-        for item in re.split(r"[。！？!?；;\n]+", text)
-        if len(item.strip()) >= 2
-    ]
+def split_sentences(text: str, language: str = "zh") -> list[str]:
+    if language == "en":
+        parts = re.split(r"(?<=[.!?])\s+|\n+", text)
+    else:
+        parts = re.split(r"[。！？!?；;\n]+", text)
+    return [item.strip() for item in parts if len(item.strip()) >= 2]
 
 
 def coefficient_of_variation(values: list[int]) -> float:
@@ -91,6 +94,169 @@ def is_specific(paragraph: str) -> bool:
     )
 
 
+REPORT_CSS = """
+body{font-family:-apple-system,"Segoe UI","Noto Sans CJK SC",sans-serif;margin:24px;color:#1f2933;background:#fbfbfd;line-height:1.5}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:24px 0 8px}
+.muted{color:#6b7785;font-size:12px}
+.verdict{display:inline-block;padding:3px 10px;border-radius:12px;color:#fff;font-size:12px;font-weight:600}
+.PASS{background:#2f9e6e}.WARN{background:#c98a1b}.FAIL{background:#c94a4a}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:12px 0}
+.metric{background:#fff;border:1px solid #e4e7eb;border-radius:6px;padding:8px 10px}
+.metric b{display:block;font-size:16px;margin-top:2px}
+table{border-collapse:collapse;width:100%;background:#fff;margin-top:6px}
+th,td{border-bottom:1px solid #e4e7eb;padding:6px 8px;text-align:left;font-size:13px;vertical-align:top}
+th{background:#f1f4f8;font-weight:600}
+tr.hit{background:#fff4e0}
+.bar{height:10px;background:#4c9ac9;border-radius:2px;min-width:2px}
+.cell{display:inline-block;min-width:20px;text-align:center;border-radius:2px;margin:1px;font-size:11px;padding:1px 2px}
+.s{background:#e8f3fb}.m{background:#b9dcf2}.l{background:#7fb8dd;color:#fff}
+.issue{border-left:4px solid #c98a1b;background:#fff;padding:8px 12px;margin:6px 0}
+.issue.FAIL{border-left-color:#c94a4a}.issue.INFO{border-left-color:#6b7785}
+.code{font-family:Consolas,monospace;font-size:12px;color:#4c5a68}
+.suggestion{color:#2f4f6f;font-size:12px;margin-top:4px}
+"""
+
+
+def _paragraph_rows(text: str) -> tuple[list[dict], set[int]]:
+    language = "zh" if re.search(r"[\u4e00-\u9fff]", text) else "en"
+    paragraphs = split_paragraphs(text) or [text.strip()]
+    rows = []
+    for index, paragraph in enumerate(paragraphs, 1):
+        sentences = split_sentences(paragraph, language)
+        rows.append(
+            {
+                "index": index,
+                "opening": paragraph[:18],
+                "sentences": len(sentences),
+                "chars": len(paragraph),
+                "lengths": [len(item) for item in sentences],
+                "ordinal": paragraph.startswith(ORDINAL_PREFIXES),
+                "specific": is_specific(paragraph),
+            }
+        )
+
+    hit_rows: set[int] = set()
+    run: list[int] = []
+    for position, row in enumerate(rows):
+        if row["ordinal"] and position > 0 and abs(row["sentences"] - rows[position - 1]["sentences"]) <= 1:
+            run.append(position)
+        elif row["ordinal"]:
+            run = [position]
+        else:
+            run = []
+        if len(run) >= 3:
+            hit_rows.update(run)
+    return rows, hit_rows
+
+
+def build_report(text: str, data: dict, output_path: str) -> Path:
+    """Write a self-contained HTML report of paragraph skeletons."""
+    rows, hit_rows = _paragraph_rows(text)
+    metrics = data.get("metrics", {})
+    max_sentences = max((row["sentences"] for row in rows), default=1) or 1
+    max_chars = max((row["chars"] for row in rows), default=1) or 1
+
+    parts = [
+        "<!doctype html><html lang='zh'><head><meta charset='utf-8'>",
+        "<meta name='viewport' content='width=device-width,initial-scale=1'>",
+        "<title>段落骨架报告</title><style>",
+        REPORT_CSS,
+        "</style></head><body>",
+        "<h1>段落骨架报告</h1>",
+        f"<span class='verdict {html.escape(data.get('verdict', 'PASS'))}'>"
+        f"{html.escape(data.get('verdict', 'PASS'))}</span>",
+        f"<div class='muted'>段落 {html.escape(str(metrics.get('paragraphs', len(rows))))} · "
+        f"句数 {html.escape(str(metrics.get('sentences', 0)))} · "
+        f"句长 CV {html.escape(str(metrics.get('sentence_length_cv', 0)))} · "
+        f"低证据段占比 {html.escape(str(metrics.get('low_specificity_ratio', 0)))}</div>",
+        "<div class='metrics'>",
+    ]
+    for label, key in (
+        ("段落", "paragraphs"),
+        ("句数", "sentences"),
+        ("句长 CV", "sentence_length_cv"),
+        ("低证据占比", "low_specificity_ratio"),
+        ("序数段", "ordinal_paragraphs"),
+        ("连接词开头占比", "transition_ratio"),
+        ("AI 词/千字", "ai_word_density_per_1000"),
+        ("知网动宾+了", "vo_le_total"),
+        ("名词串", "noun_chains"),
+        ("长句", "long_sentences"),
+    ):
+        parts.append(
+            f"<div class='metric'>{html.escape(label)}<b>{html.escape(str(metrics.get(key, 0)))}</b></div>"
+        )
+    parts.append("</div>")
+
+    parts.append("<h2>段落骨架</h2>")
+    parts.append("<table><thead><tr><th>#</th><th>段首</th><th>句数</th><th>字数</th>"
+                 "<th>句数占比</th><th>特征</th></tr></thead><tbody>")
+    for position, row in enumerate(rows):
+        width = max(2, round(row["sentences"] / max_sentences * 100))
+        marks = []
+        if row["ordinal"]:
+            marks.append("序数开头")
+        if not row["specific"]:
+            marks.append("无具体信息")
+        if position in hit_rows:
+            marks.append("模板网格")
+        row_class = " class='hit'" if position in hit_rows else ""
+        parts.append(
+            f"<tr{row_class}><td>{row['index']}</td><td>{html.escape(row['opening'])}</td>"
+            f"<td>{row['sentences']}</td><td>{row['chars']}</td>"
+            f"<td><div class='bar' style='width:{width}%'></div></td>"
+            f"<td>{html.escape('、'.join(marks) or '—')}</td></tr>"
+        )
+    parts.append("</tbody></table>")
+
+    parts.append("<h2>句长网格</h2>")
+    parts.append("<div class='muted'>每格为一句的字数；颜色越深表示句子越长。</div>")
+    parts.append("<table><thead><tr><th>#</th>")
+    for column in range(1, min(max_sentences, 12) + 1):
+        parts.append(f"<th>S{column}</th>")
+    parts.append("</tr></thead><tbody>")
+    for position, row in enumerate(rows):
+        row_class = " class='hit'" if position in hit_rows else ""
+        parts.append(f"<tr{row_class}><td>{row['index']}</td>")
+        for column in range(min(max_sentences, 12)):
+            if column < len(row["lengths"]):
+                length = row["lengths"][column]
+                tone = "s" if length < 15 else ("m" if length <= 35 else "l")
+                parts.append(f"<td><span class='cell {tone}'>{length}</span></td>")
+            else:
+                parts.append("<td>—</td>")
+        parts.append("</tr>")
+    parts.append("</tbody></table>")
+
+    parts.append("<h2>问题清单</h2>")
+    issues = data.get("issues", [])
+    if not issues:
+        parts.append("<p class='muted'>没有命中规则。</p>")
+    for issue in issues:
+        severity = html.escape(issue.get("severity", "INFO"))
+        parts.append(f"<div class='issue {severity}'>")
+        parts.append(
+            f"<b>{severity}</b> <span class='code'>{html.escape(issue.get('code', ''))}</span> "
+            f"{html.escape(issue.get('message', ''))}"
+        )
+        for example in issue.get("examples", [])[:3]:
+            parts.append(f"<div class='muted'>· {html.escape(str(example)[:180])}</div>")
+        if issue.get("suggestion"):
+            parts.append(f"<div class='suggestion'>{html.escape(issue['suggestion'])}</div>")
+        parts.append("</div>")
+
+    parts.append(
+        "<p class='muted' style='margin-top:24px'>结构检测只提示模板化与信息密度，"
+        "不判断文本是否由 AI 生成；知网句式为经验规则、非官方口径。</p>"
+    )
+    parts.append("</body></html>")
+
+    path = Path(output_path).expanduser()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(parts), encoding="utf-8")
+    return path
+
+
 def run(args: argparse.Namespace) -> dict:
     text = C.read_text(args.text, args.input_file)
     if not text.strip():
@@ -98,11 +264,11 @@ def run(args: argparse.Namespace) -> dict:
     lang = C.detect_language(text, args.language)
 
     paragraphs = split_paragraphs(text)
-    sentences = split_sentences(text)
+    sentences = split_sentences(text, lang)
     if not paragraphs:
         paragraphs = [text.strip()]
     sentence_lengths = [len(item) for item in sentences]
-    paragraph_sentence_counts = [len(split_sentences(item)) for item in paragraphs]
+    paragraph_sentence_counts = [len(split_sentences(item, lang)) for item in paragraphs]
     sentence_cv = coefficient_of_variation(sentence_lengths)
     paragraph_cv = coefficient_of_variation(paragraph_sentence_counts)
 
@@ -217,11 +383,11 @@ def run(args: argparse.Namespace) -> dict:
     for paragraph in paragraphs:
         hits = VO_PATTERN.findall(paragraph)
         vo_total += len(hits)
-        sentence_counts = [len(VO_PATTERN.findall(item)) for item in split_sentences(paragraph)]
+        sentence_counts = [len(VO_PATTERN.findall(item)) for item in split_sentences(paragraph, lang)]
         max_in_sentence = max(sentence_counts) if sentence_counts else 0
         if len(hits) >= 6 or max_in_sentence >= 3:
             vo_hot.append((paragraph, len(hits), max_in_sentence))
-    if vo_hot:
+    if lang == "zh" and vo_hot:
         issues.append(
             {
                 "severity": "WARN",
@@ -238,7 +404,7 @@ def run(args: argparse.Namespace) -> dict:
         if len(hits) >= 2:
             noun_hot.append((paragraph, hits))
     noun_chains = [chain for _, hits in noun_hot for chain in hits]
-    if noun_hot:
+    if lang == "zh" and noun_hot:
         issues.append(
             {
                 "severity": "WARN",
@@ -258,7 +424,7 @@ def run(args: argparse.Namespace) -> dict:
         if text.count(word) >= 2
     ]
     adj_counts = {word: text.count(word) for word in ADJ_NOUN_PATTERN}
-    if (any(count >= 3 for count in adj_counts.values()) or len(repeated_adj_noun) >= 3):
+    if lang == "zh" and (any(count >= 3 for count in adj_counts.values()) or len(repeated_adj_noun) >= 3):
         issues.append(
             {
                 "severity": "WARN",
@@ -271,7 +437,7 @@ def run(args: argparse.Namespace) -> dict:
 
     long_sentences = [item for item in sentences if len(item) > LONG_SENTENCE_CHARS]
     long_ratio = len(long_sentences) / len(sentences) if sentences else 0.0
-    if len(sentences) >= 5 and len(long_sentences) >= 2 and long_ratio >= 0.2:
+    if lang == "zh" and len(sentences) >= 5 and len(long_sentences) >= 2 and long_ratio >= 0.2:
         issues.append(
             {
                 "severity": "WARN",
@@ -317,6 +483,10 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         data = run(args)
+        if args.report:
+            text = C.read_text(args.text, args.input_file)
+            report_path = build_report(text, data, args.report)
+            data["report_path"] = str(report_path)
     except C.UsageError as exc:
         return C.emit_error(TOOL, str(exc), 2)
     except C.ToolRuntimeError as exc:

@@ -5,6 +5,8 @@
 | 契约/结构 | `python -m unittest discover -s tests -v` | 入口、固定输出、退出码、LaTeX、事实核对、防御性、AI 结构 |
 | 合成回归 | `python tests/run_regression.py --verbose` | `regression_cases.json` 中 19 条自写段落 |
 | 真实段落回归 | `python tests/build_regression_local.py --source <草稿> --limit 30` | 生成 `regression_local/cases.json`（gitignored） |
+| 英/综述回归 | `--language en` 与 `--path-contains review` | 各 20 段，生成 `en_cases.json` / `review_cases.json`（gitignored） |
+| 段落骨架报告 | `python scripts/check_ai_style.py --input-file <稿> --report report.html` | 自包含 HTML：段落骨架表、句长网格、问题清单 |
 | 触发评测 | `python tests/evaluate_triggers.py [--llm]` | `trigger_cases.json` 的 15 正 / 10 负样例 |
 
 ## 回归用例格式
