@@ -213,6 +213,12 @@ def run(args: argparse.Namespace) -> dict:
     issues.extend(collect_density_issues(text, data.get("density_rules") or []))
     issues.extend(collect_opening_issue(text, args.section, data, categories))
 
+    # 讨论章是真实局限的合法位置：自贬类降为 WARN，由作者判断是否保留一次。
+    if args.section == "discussion":
+        for issue in issues:
+            if issue["code"] == "DEF_SELF_DEPRECATION" and issue["severity"] == "FAIL":
+                issue["severity"] = "WARN"
+
     if args.strict:
         for issue in issues:
             if issue["severity"] == "WARN":

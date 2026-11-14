@@ -84,7 +84,8 @@ def build_system_prompt(
             lines.append(f"- \"{word}\"：{hint}")
         if lines:
             parts.append(
-                "\n[AI 腔黑名单 —— 原文出现下列表达时必须改写，禁止原样保留]\n"
+                "\n[AI 腔参考清单 —— 仅在语义允许时改写；若该词是领域术语或原文唯一准确表达，"
+                "保留并在 changes 中说明原因]\n"
                 + "\n".join(lines)
             )
 
@@ -191,7 +192,7 @@ def extract_json_object(raw: str) -> dict:
     raise ToolRuntimeError(f"模型输出不是合法 JSON：{raw[:500]}")
 
 
-def rewrite(
+def prepare(
     text: str,
     style: str = "mixed",
     language: str = "auto",
@@ -200,12 +201,11 @@ def rewrite(
     paper_type: str = "general",
     corpus_sections: str = "",
     profile: str = "",
-    temperature: float = 0.3,
     kb: str = "",
     kb_dir: str | None = None,
     corpus_loader=None,
 ) -> dict:
-    """Run one rewrite and return the model object plus provenance flags."""
+    """Build prompts and provenance without calling any external API."""
     if not text.strip():
         raise UsageError("text 不能为空")
     if language not in {"auto", "zh", "en"}:
@@ -244,14 +244,50 @@ def rewrite(
         f"语言：{lang}\n待改写文本：\n{text}"
         + (f"\n\n项目背景：{profile}" if profile else "")
     )
+    return {
+        "style": normalized_style,
+        "language": lang,
+        "system_prompt": system_prompt,
+        "user_prompt": user_prompt,
+        "reference_texts_used": bool(reference_texts),
+        "corpus_examples_used": bool(corpus_texts),
+        "kb_used": bool(kb_texts),
+    }
 
-    raw = call_deepseek(system_prompt, user_prompt, temperature)
+
+def rewrite(
+    text: str,
+    style: str = "mixed",
+    language: str = "auto",
+    reference_texts: str = "",
+    corpus: str = "",
+    paper_type: str = "general",
+    corpus_sections: str = "",
+    profile: str = "",
+    temperature: float = 0.3,
+    kb: str = "",
+    kb_dir: str | None = None,
+    corpus_loader=None,
+) -> dict:
+    """Run one rewrite and return the model object plus provenance flags."""
+    prepared = prepare(
+        text=text,
+        style=style,
+        language=language,
+        reference_texts=reference_texts,
+        corpus=corpus,
+        paper_type=paper_type,
+        corpus_sections=corpus_sections,
+        profile=profile,
+        kb=kb,
+        kb_dir=kb_dir,
+        corpus_loader=corpus_loader,
+    )
+
+    raw = call_deepseek(prepared["system_prompt"], prepared["user_prompt"], temperature)
     result = extract_json_object(raw)
-    result.setdefault("style", normalized_style)
-    result.setdefault("language", lang)
-    result.setdefault("reference_texts_used", bool(reference_texts))
-    result.setdefault("corpus_examples_used", bool(corpus_texts))
-    result.setdefault("kb_used", bool(kb_texts))
+    for key in ("style", "language", "reference_texts_used", "corpus_examples_used", "kb_used"):
+        result.setdefault(key, prepared[key])
 
     rewritten = result.get("rewritten") or ""
     if isinstance(rewritten, str) and rewritten:

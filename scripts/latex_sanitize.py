@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 
 import _common as C
 import latex_clean
@@ -43,9 +44,19 @@ def run(args: argparse.Namespace) -> dict:
         "note": "建议正文中写 \\% \\& \\# \\_；命令参数（如 \\cite{a_b}）内的下划线通常无害。",
     }
     if args.fix:
-        fixed = latex_clean.escape_latex(text)
+        fixed, counts = latex_clean.escape_report(text)
         result["fixed_text"] = fixed
         result["changed"] = fixed != text
+        result["changes"] = counts
+        if fixed != text:
+            diff = difflib.unified_diff(
+                text.splitlines(),
+                fixed.splitlines(),
+                fromfile="original",
+                tofile="fixed",
+                lineterm="",
+            )
+            result["diff"] = "\n".join(diff)[:4000]
     return result
 
 

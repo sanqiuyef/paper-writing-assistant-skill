@@ -1,0 +1,22 @@
+{
+  "verdict": "WARN",
+  "fail": 0,
+  "warn": 1,
+  "info": 0,
+  "section": "discussion",
+  "chars": 29,
+  "issues": [
+    {
+      "severity": "WARN",
+      "code": "DEF_SELF_DEPRECATION",
+      "line": 1,
+      "count": 1,
+      "message": "自我削弱式评价（自我削弱/自贬）",
+      "examples": [
+        "本研究的局限在于样本仅覆盖21场降雨，尚需在更多城市验证。"
+      ],
+      "suggestion": "删除自贬或改为可核验的结果；真实边界只保留一次，并改写为正面范围"
+    }
+  ],
+  "note": "检测器只报不改。真实边界保留一次并正面表述；删除防御不得反向夸大主张。"
+}

@@ -1,0 +1,8 @@
+{
+  "problem_count": 0,
+  "problems": [],
+  "note": "建议正文中写 \\% \\& \\# \\_；命令参数（如 \\cite{a_b}）内的下划线通常无害。",
+  "fixed_text": "$$x_1=y_1$$ \\cite{model_v1}",
+  "changed": false,
+  "changes": {}
+}

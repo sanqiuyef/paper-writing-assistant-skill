@@ -10,7 +10,7 @@
 | `replace_ai_phrases.py` | AI 腔用词检测；`--apply` 插入 `[[建议]]` 占位符 |
 | `fill_section_template.py` | 章节 / 投稿信 / 审稿回复模板，支持 `{{占位符}}` |
 | `generate_outline.py` | 论文大纲与配图方案 |
-| `rewrite_academic_text.py` | DeepSeek 降 AI 味改写，带数字编造防线 |
+| `rewrite_academic_text.py` | DeepSeek 降 AI 味改写，带数字编造防线；`--dry-run` 只组装提示词、不发请求 |
 | `lint_writing.py` | 确定性写作质量门控，PASS / WARN / FAIL |
 | `check_defensive_writing.py` | 防御性写作检测：自贬、叠甲、预演质疑、过程汇报、括号摊底、叠层模糊、边界重复、反向夸大 |
 | `latex_sanitize.py` | LaTeX 转义体检与修复 |
@@ -33,6 +33,9 @@ cp -r paper-writing-assistant-skill .zcode/skills/paper-writing-assistant
 
 # 或用户级
 cp -r paper-writing-assistant-skill ~/.zcode/skills/paper-writing-assistant
+
+# Claude Code / Codex 等支持 SKILL.md 的工具
+cp -r paper-writing-assistant-skill ~/.claude/skills/paper-writing-assistant
 ```
 
 重启 agent 后生效。
@@ -48,6 +51,13 @@ cp .env.example .env   # 填入 DEEPSEEK_API_KEY，或在终端 export
 ```
 
 Windows 控制台建议加 `-X utf8`，避免 GBK 乱码。
+
+## 数据与隐私
+
+- 除 `rewrite_academic_text.py` 外，所有脚本只在本地读写，不发起网络请求。
+- `rewrite_academic_text.py` 会把待改写正文、可选范文片段与本地语料检索结果发送到 `config/defaults.json` 或 `DEEPSEEK_API_URL` 指定的端点。未发表数据、审稿材料、保密项目内容在发送前必须获得作者明确同意。
+- 不想外发时用 `--dry-run`：只返回 `system_prompt` 与 `user_prompt`，由宿主 agent 自行改写，零网络请求。
+- API key 只放环境变量或 `.env`（已在 `.gitignore`），不要写进脚本或提交记录。
 
 ## 快速开始
 
@@ -66,6 +76,9 @@ python -X utf8 scripts/latex_sanitize.py --input-file draft.tex --fix
 
 # 5) 降 AI 味
 python -X utf8 scripts/rewrite_academic_text.py --input-file section3.md --style academic --kb zh
+
+# 5b) 不外发：只组装提示词，交给宿主 agent 改写
+python -X utf8 scripts/rewrite_academic_text.py --input-file section3.md --dry-run
 
 # 6) 防御性写作检测（摘要/结论加 --section；终稿可加 --strict）
 python -X utf8 scripts/check_defensive_writing.py --input-file section3.md --section results
@@ -120,12 +133,13 @@ python -X utf8 -m unittest discover -s tests -v
 python -X utf8 tests/update_expected.py
 ```
 
-`tests/test_prompts.md` 提供 3 条人工评测提示词。
+`tests/test_prompts.md` 提供 4 条人工评测提示词。
 
 ## 维护
 
 - 词库：改 `scripts/_lexicon.json`（中文 45 / 英文 78 条），无需改代码。
 - 防御性规则：改 `scripts/defensive_patterns.json`（类别、正则、严重度、改法），再跑测试更新期望输出。
+- 来源边界：`scripts/writing_lint.py`、`scripts/latex_clean.py` 及投稿信/审稿回复模板派生自 scipilot-writing-skill（MIT），本地已扩展 LaTeX 掩蔽；`check_defensive_writing.py`、`defensive_patterns.json`、`_kb.py`、`_rewrite.py` 为本项目自建。
 
 ## 结构
 
@@ -147,6 +161,13 @@ paper-writing-assistant/
 ├── scripts/                   # 8 入口 + 共享模块 + 规则引擎 + 词库/防御性规则
 └── tests/                     # 契约测试、期望输出、人工评测提示词
 ```
+
+## 已知边界
+
+- `lint_writing.py` 与 `check_defensive_writing.py` 是启发式检测：词表与正则只提示可能性，误报/漏报都存在，判定以整节或全文为准，最终由作者复核。
+- 防御性检测不判断“这条局限是否必须报告”。真实局限在讨论章保留一次是合规写作，`--section discussion` 会把自贬类降为 WARN。
+- `rewrite_academic_text.py` 只保证不改动数值 token 并标出新增数值；语义等价、引用归属与单位一致性仍需人工核对。
+- 尚未实现全文级事实/一致性审计（跨章节数值、术语、研究目标与结论对应）；当前版本先保证单段与章节级检查的确定性。
 
 ## 许可
 

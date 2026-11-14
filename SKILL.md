@@ -1,6 +1,6 @@
 ---
 name: paper-writing-assistant
-description: 论文写作一体化助手（脚本版）— 学术用语检查、模板填充、AI 词句替换、大纲生成、DeepSeek 降 AI 味改写、机检门控、LaTeX 转义体检。语料由 lancedb-search 与 Obsidian 支撑，7 个脚本按需独立调用，非固定流程。流程：Stage 0 逐项问询（任务/载体/期刊/语言/保守度）→ 三段式交付（改后文本+回译核对+修改日志）→ lint_writing 机检门控（FAIL 必修）→ AI 审稿自审（≤3 轮）。铁律：叙事执行发布会原则，只围绕证据优势组织，不自贬、不替审稿人递刀；只动表达不动数值结论、绝不编造引用、断言强度匹配证据、宁缺毋滥、Word 端零 Markdown/LaTeX 守转义。触发：写论文、检查语言、替换 AI 词、填模板、生成大纲、润色、polish、去 AI 味、翻译润色、写摘要引言、cover letter、rebuttal、回复审稿意见、投稿前语言终检、防御性写作、发布会原则、叙事重构、这段太像 AI 写的。
+description: 中英文学术论文写作与润色助手（脚本版）：AI 词检查、模板/大纲、改写、写作机检、防御性写作检测、LaTeX 转义。语料可由 lancedb-search 或本地 Markdown/Obsidian 提供。触发：润色、polish、去 AI 味、查语言、填模板、生成大纲、写摘要/引言、cover letter、rebuttal、回复审稿意见、投稿前终检、防御性写作、这段太像 AI 写的。
 ---
 
 # Paper Writing Assistant
@@ -9,14 +9,14 @@ description: 论文写作一体化助手（脚本版）— 学术用语检查、
 
 当用户需要“写论文”“检查语言”“替换 AI 词”“填模板”“生成大纲”“润色/polish”“去 AI 味”“写 cover letter”“回复审稿意见/rebuttal”，或要求消除防御性写作、按发布会原则重排叙事时调用。
 
-本 skill 的能力全部在 `scripts/` 下，按任务选一个或几个脚本；**推荐组合不是强制顺序**，可跳过不适用步骤。本工作区的 `paper-writing-assistant` MCP 注册已注销；旧服务源码仅作历史回退，不在运行路径。
+本 skill 的能力全部在 `scripts/` 下，按任务选一个或几个脚本；**推荐组合不是强制顺序**，可跳过不适用步骤。
 
 ## 能力 → 脚本索引
 
 所有脚本位于 `scripts/`，用同一解释器运行。默认命令前缀：
 
 ```bash
-python -X utf8 scripts\<脚本名>.py
+python -X utf8 scripts/<脚本名>.py
 ```
 
 （要求 Python ≥ 3.10；Windows 控制台建议加 `-X utf8` 避免 GBK 乱码。）
@@ -29,7 +29,7 @@ python -X utf8 scripts\<脚本名>.py
 | `replace_ai_phrases.py` | AI 腔用词检测；`--apply` 时插入 `[[建议]]` 占位符 | `--text`/`--input-file`、`--language`、`--apply` | `data.details[]`、`data.result_text`；默认 dry-run |
 | `fill_section_template.py` | 取章节/投稿信/审稿回复模板，注入 `{{占位符}}` | `--section`、`--params`/`--params-file`、`--language`、`--paper-type`、`--profile` | `data.template`、`data.template_id`、`data.evidence_basis` |
 | `generate_outline.py` | 生成章节结构与配图方案 | `--language`、`--paper-type`、`--profile` | `data.sections[]`、`data.figures[]` |
-| `rewrite_academic_text.py` | DeepSeek 降 AI 味改写，带数字编造防线 | `--text`/`--input-file`、`--style`、`--language`、`--reference-texts`/`--reference-file`、`--corpus`、`--kb`、`--kb-dir`、`--temperature` | `data.rewritten`、`changes`、`preserved_facts`、`risks`；需 `DEEPSEEK_API_KEY` |
+| `rewrite_academic_text.py` | DeepSeek 降 AI 味改写，带数字编造防线；`--dry-run` 只组装提示词、不发请求 | `--text`/`--input-file`、`--style`、`--language`、`--reference-texts`/`--reference-file`、`--corpus`、`--kb`、`--kb-dir`、`--temperature`、`--dry-run` | `data.rewritten`、`changes`、`preserved_facts`、`risks`；`--dry-run` 返回 `system_prompt`/`user_prompt`；在线调用需 `DEEPSEEK_API_KEY` |
 | `lint_writing.py` | 确定性写作质量门控，返回 PASS/WARN/FAIL | `--text`/`--input-file`、`--mode plain/word/docx/markdown/latex`、`--language` | `data.verdict`、`fail/warn/info`、`issues[]`；**退出码 1 = FAIL，不是执行失败** |
 | `check_defensive_writing.py` | 防御性写作检测：自贬、叠甲、预演质疑、过程汇报、括号摊底、叠层模糊、边界重复、反向夸大 | `--text`/`--input-file`、`--section body/abstract/introduction/results/discussion/conclusion`、`--strict` | `data.verdict`、`issues[]`（severity/code/line/count/examples/suggestion）；**退出码 1 = FAIL** |
 | `latex_sanitize.py` | LaTeX 转义体检；`--fix` 返回修复稿 | `--text`/`--input-file`、`--fix` | `data.problems[]`（severity/message）、`fixed_text`、`changed` |
@@ -38,22 +38,25 @@ python -X utf8 scripts\<脚本名>.py
 
 ```bash
 # 1) 先看 AI 词，不改原文
-python -X utf8 scripts\check_academic_language.py --input-file 第3节.md
+python -X utf8 scripts/check_academic_language.py --input-file 第3节.md
 
 # 2) 取章节模板
-python -X utf8 scripts\fill_section_template.py --section abstract --paper-type general
+python -X utf8 scripts/fill_section_template.py --section abstract --paper-type general
 
 # 3) 机检门控（FAIL 必修）
-python -X utf8 scripts\lint_writing.py --input-file 第3节.md --mode word --language zh
+python -X utf8 scripts/lint_writing.py --input-file 第3节.md --mode word --language zh
 
 # 4) LaTeX 体检并修复
-python -X utf8 scripts\latex_sanitize.py --input-file draft.tex --fix
+python -X utf8 scripts/latex_sanitize.py --input-file draft.tex --fix
 
-# 5) 降 AI 味：先用 lancedb-search 取范文，再传入改写
-python -X utf8 scripts\rewrite_academic_text.py --input-file 第3节.md --style academic --kb zh --reference-file 范文片段.md
+# 5) 降 AI 味：先用 lancedb-search（可选）或 --kb 取范文，再传入改写
+python -X utf8 scripts/rewrite_academic_text.py --input-file 第3节.md --style academic --kb zh --reference-file 范文片段.md
+
+# 5b) 不外发：只组装提示词，交给宿主 agent 改写
+python -X utf8 scripts/rewrite_academic_text.py --input-file 第3节.md --dry-run
 
 # 6) 防御性写作检测（摘要/结论建议加 --section；终稿可加 --strict）
-python -X utf8 scripts\check_defensive_writing.py --input-file 第3节.md --section results
+python -X utf8 scripts/check_defensive_writing.py --input-file 第3节.md --section results
 ```
 
 脚本之间没有隐式状态：每个脚本单独起进程、单独输出 JSON。需要组合时由 agent 自己串联，例如“先 lint 定位问题段 → 再 rewrite 该段 → 再 lint 复检”。
@@ -76,9 +79,11 @@ python -X utf8 scripts\check_defensive_writing.py --input-file 第3节.md --sect
 Stage 0 问询 → 起草/改写 → 机检门控 → AI 读稿自审（≤3 轮）→ 三段式交付
 ```
 
-### Stage 0：信息收集（必做，禁止默默假设）
+### Stage 0：信息收集（按任务定深度）
 
-缺任一必问项就开工是错误的；对有默认值的项也要告知默认值再确认：
+**Quick Mode（默认，段落/句子级）**：能从上下文推断的直接推断；有默认值的说明默认值后直接开始；只问真正影响结果的歧义（载体、语言方向），一次最多一个问题。适合“帮我润色这段”“这段太像 AI 写的”“查一下 LaTeX 转义”。
+
+**Deep Mode（整章/投稿前）**：收齐下列 A-F，复述参数后等“开始”。适用于全文润色、投稿前终检、rebuttal 与 cover letter。
 
 - **A 任务类型**：润色 / 翻译润色 / 缩写 / 扩写 / 去 AI 味 / 逻辑检查 / 写某章节 / 图表标题 / 审稿自检 / cover letter / rebuttal
 - **B 文本载体**：`.tex`（LaTeX 纯净+转义规则） / `.docx`/Word（纯文本+全角标点+零 Markdown） / `.md` / 粘贴片段（问清最终落点）
@@ -108,11 +113,11 @@ Stage 0 问询 → 起草/改写 → 机检门控 → AI 读稿自审（≤3 轮
 - **Part 2**：直译/回译核对（翻译类任务必附，供核对未走样）
 - **Part 3**：修改日志（改了什么、为什么）
 
-脚本只能产出机检 JSON；Part 2 与 Part 3 必须由 agent 生成，不得用“已跑脚本”代替。
+Quick Mode 可只交 Part 1 + 一句话改动摘要；Deep Mode 三段齐全。脚本只能产出机检 JSON；Part 2 与 Part 3 必须由 agent 生成，不得用“已跑脚本”代替。
 
 ## 铁律（任何输出必须满足）
 
-1. **诚信**：润色只动表达，绝不改动任何数据、数值、方向、结论或实验事实；绝不编造文献、结果、引用（找文献用 lancedb-search / zotero skill / elsevier MCP，标【待补证】而不是硬编）
+1. **诚信**：润色只动表达，绝不改动任何数据、数值、方向、结论或实验事实；绝不编造文献、结果、引用（找文献用可用的检索工具，如 lancedb-search / zotero / elsevier；查不到标【待补证】而不是硬编）
 2. **宁缺毋滥**：原文若已清晰、准确、规范，保留原样并明确肯定，不为追求形式变化强行换词
 3. **断言=证据**：hedging 与 boosting 强度必须匹配证据强度，绝不 overclaim
 4. **载体纯净**：Word 端零 Markdown；LaTeX 端特殊字符转义、保留 `\cite{}`/`\ref{}` 等命令
@@ -123,6 +128,8 @@ Stage 0 问询 → 起草/改写 → 机检门控 → AI 读稿自审（≤3 轮
 ## 叙事层：发布会原则（反防御性写作）
 
 论文是一场学术发布会，不是项目总结、实验日志或自我审查报告。先识别这项工作最值得发表的价值，再围绕它组织全部材料。完整规则、决策优先级与快速提示词见 `references/anti_defensive_writing.md`。
+
+**执行顺序**：先过「证据边界」（必须报告的不利结果、关键对照与影响结论的局限），再按叙事规则调整；叙事规则不得压掉证据边界。真实局限在讨论章保留一次是合规写作，不属于防御性缺陷；`check_defensive_writing.py --section discussion` 对自贬类只报 WARN，由作者判断。
 
 **叙事**
 
@@ -188,6 +195,7 @@ Stage 0 问询 → 起草/改写 → 机检门控 → AI 读稿自审（≤3 轮
 - **证据级检索（优先，若环境提供）**：`lancedb-search` MCP 的 `search_knowledge(query, search_mode="hybrid")` 取原文片段，`get_document(filepath)` 取全文；把命中段落写成文件后用 `rewrite_academic_text.py --reference-file` 传入，或在正文中按引用规范转述。
 - **离线语料（支撑）**：本地 Markdown/Obsidian 语料目录，由 `_kb.py` 做零依赖关键词检索；用 `--kb-dir` 或 `PWA_KB_DIR` / `PWA_VAULT_DIR` 指定根目录（也可写在 `config/defaults.json` 的 `vault_dir`），`--kb zh/en` 按段落语言过滤，`--kb <主题目录>` 限定范围。
 - **skill 自带资产**：`templates/`（投稿信/审稿回复）、`assets/profiles/`（章节模板与大纲 JSON）、`assets/styles/`（改写风格指引）、`assets/corpus.example/`（范文 JSON 结构示例）。自己的范文放 `assets/corpus/`（不入库），语料全文不随 skill 分发。
+- **外发边界**：`rewrite_academic_text.py` 不经 `--dry-run` 时会把正文、范文与检索片段发送到配置的 DeepSeek 端点。未发表数据、审稿材料、保密内容必须先取得作者同意；不外发时用 `--dry-run`，由宿主 agent 本地改写。
 
 ## 参考文档（references/，按需加载，勿全文塞进回复）
 

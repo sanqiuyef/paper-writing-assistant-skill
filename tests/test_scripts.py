@@ -63,6 +63,18 @@ class ScriptContractTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertIn("DEEPSEEK_API_KEY", payload["error"])
 
+    def test_rewrite_dry_run_no_network(self) -> None:
+        result = run_script(
+            "rewrite_academic_text.py",
+            ["--text", "值得注意的是，本文方法具有重要价值。", "--dry-run"],
+            env={"DEEPSEEK_API_KEY": ""},
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["data"]["dry_run"])
+        self.assertIn("system_prompt", payload["data"])
+        self.assertIn("AI 腔参考清单", payload["data"]["system_prompt"])
+
     def test_help_every_entrypoint(self) -> None:
         for script in (
             "check_academic_language.py",

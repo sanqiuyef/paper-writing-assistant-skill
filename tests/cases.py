@@ -66,6 +66,23 @@ CASES = [
         "exit_code": 0,
     },
     {
+        "name": "defensive_discussion",
+        "script": "check_defensive_writing.py",
+        "args": [
+            "--text",
+            "本研究的局限在于样本仅覆盖21场降雨，尚需在更多城市验证。",
+            "--section",
+            "discussion",
+        ],
+        "exit_code": 0,
+    },
+    {
+        "name": "latex_protect",
+        "script": "latex_sanitize.py",
+        "args": ["--text", "$$x_1=y_1$$ \\cite{model_v1}", "--fix"],
+        "exit_code": 0,
+    },
+    {
         "name": "latex_fix",
         "script": "latex_sanitize.py",
         "args": ["--text", "95% 的样本 & 5 个变量", "--fix"],

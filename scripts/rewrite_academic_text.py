@@ -36,6 +36,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--temperature", type=float, default=0.3)
     parser.add_argument("--kb", default="", help="语料检索范围：空=全库，zh/en=语言，或主题目录名")
     parser.add_argument("--kb-dir", default="", help="显式指定语料根目录（默认 Obsidian vault）")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="只组装提示词与范文，不调用 DeepSeek；由宿主 agent 自行改写（零外部请求）",
+    )
     return parser
 
 
@@ -45,6 +50,22 @@ def run(args: argparse.Namespace) -> dict:
     if args.reference_file:
         extra = C.read_text(None, args.reference_file, "reference")
         reference = (reference + "\n\n" + extra).strip() if reference else extra
+    if args.dry_run:
+        prepared = _rewrite.prepare(
+            text=text,
+            style=args.style,
+            language=args.language,
+            reference_texts=reference,
+            corpus=args.corpus,
+            paper_type=args.paper_type,
+            corpus_sections=args.corpus_sections,
+            profile=args.profile,
+            kb=args.kb,
+            kb_dir=args.kb_dir or None,
+        )
+        prepared["dry_run"] = True
+        prepared["note"] = "未发起网络请求。把 system_prompt/user_prompt 交给宿主 agent 改写，再按 risks 核对数字。"
+        return prepared
     return _rewrite.rewrite(
         text=text,
         style=args.style,

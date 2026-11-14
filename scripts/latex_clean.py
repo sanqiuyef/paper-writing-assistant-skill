@@ -2,7 +2,8 @@
 # ---------------------------------------------------------------------------
 # 本文件自 scipilot-writing-skill (https://github.com/Haojae/scipilot-writing-skill)
 # v1.0.0 引入，按 MIT License 授权使用（Copyright (c) 2026 Haojae）。
-# 融合进 paper-writing-assistant MCP 时仅做导入适配，检查逻辑保持上游原样。
+# 2026-11-14 扩展：$$...$$、数学环境、引用/URL 命令参数、表格 &、\verb/verbatim
+# 与行首注释均纳入掩蔽，避免自动转义破坏公式与命令参数。
 # ---------------------------------------------------------------------------
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -41,48 +42,169 @@ if sys.platform == "win32":
 
 SPECIALS = ("%", "&", "#", "_")
 
+# 数学环境整段原样保留；表格环境只保护 &（列分隔符），单元格文本仍按正文处理。
+MATH_ENVS = {
+    "math", "displaymath", "equation", "equation*", "align", "align*",
+    "gather", "gather*", "multline", "multline*", "eqnarray", "eqnarray*",
+    "array", "matrix", "pmatrix", "bmatrix", "vmatrix", "Vmatrix",
+    "cases", "split", "aligned", "gathered", "multlined", "subequations",
+}
+TABLE_ENVS = {"tabular", "tabular*", "tabularx", "longtable", "tabulary"}
+# 参数内允许出现裸 _ # % & 的命令：引用、标签、URL、文件路径等。
+LITERAL_COMMAND_RX = re.compile(
+    r"\\(?:cite|citep|citet|ref|eqref|label|url|href|includegraphics|"
+    r"input|include|bibliography)\*?"
+)
+
+
+def _mark(mask: list, start: int, end: int) -> None:
+    for index in range(max(0, start), min(len(mask), end)):
+        mask[index] = True
+
+
+def _consume_command_args(text: str, position: int) -> int:
+    """Consume up to three optional/brace arguments after a command name."""
+    n = len(text)
+    index = position
+    for _ in range(3):
+        while index < n and text[index] in " \t":
+            index += 1
+        if index < n and text[index] == "[":
+            close = text.find("]", index + 1)
+            if close == -1:
+                return n
+            index = close + 1
+            continue
+        if index < n and text[index] == "{":
+            depth = 0
+            cursor = index
+            while cursor < n:
+                if text[cursor] == "{":
+                    depth += 1
+                elif text[cursor] == "}":
+                    depth -= 1
+                    if depth == 0:
+                        cursor += 1
+                        break
+                cursor += 1
+            if depth != 0:
+                return n
+            index = cursor
+            continue
+        break
+    return index
+
 
 def _math_mask(text: str) -> list:
-    """标记字符是否在数学跨度内（$..$ / \\(..\\) / \\[..\\]）或属于转义序列。"""
-    mask = [False] * len(text)
-    i, n, in_inline = 0, len(text), False
+    """标记数学/命令/表格分隔符/注释等不可自动改写的字符。
+
+    覆盖 ``$...$``、``$$...$$``、``\\(...\\)``、``\\[...\\]``、数学环境、
+    ``\\verb``、``verbatim``、引用/URL/文件路径命令参数、表格 ``&`` 与行首注释。
+    """
+    n = len(text)
+    mask = [False] * n
+
+    for match in re.finditer(r"^[ \t]*%.*$", text, re.MULTILINE):
+        _mark(mask, match.start(), match.end())
+
+    i = 0
     while i < n:
-        c = text[i]
-        if c == "\\" and i + 1 < n:
-            nxt = text[i + 1]
-            if nxt == "(":
-                j = text.find("\\)", i + 2); j = n if j == -1 else j + 2
-                for k in range(i, j):
-                    mask[k] = True
-                i = j; continue
-            if nxt == "[":
-                j = text.find("\\]", i + 2); j = n if j == -1 else j + 2
-                for k in range(i, j):
-                    mask[k] = True
-                i = j; continue
+        if text.startswith("$$", i):
+            close = text.find("$$", i + 2)
+            end = n if close == -1 else close + 2
+            _mark(mask, i, end)
+            i = end
+            continue
+
+        char = text[i]
+        if char == "$":
+            cursor = i + 1
+            while cursor < n:
+                if text[cursor] == "$" and (cursor == 0 or text[cursor - 1] != "\\"):
+                    break
+                cursor += 1
+            end = n if cursor >= n else cursor + 1
+            _mark(mask, i, end)
+            i = end
+            continue
+
+        if char == "\\":
+            if text.startswith("\\(", i):
+                close = text.find("\\)", i + 2)
+                end = n if close == -1 else close + 2
+                _mark(mask, i, end)
+                i = end
+                continue
+            if text.startswith("\\[", i):
+                close = text.find("\\]", i + 2)
+                end = n if close == -1 else close + 2
+                _mark(mask, i, end)
+                i = end
+                continue
+
+            verb = re.match(r"\\verb\*?", text[i:])
+            if verb:
+                cursor = i + verb.end()
+                if cursor < n:
+                    delimiter = text[cursor]
+                    close = text.find(delimiter, cursor + 1)
+                    cursor = n if close == -1 else close + 1
+                _mark(mask, i, cursor)
+                i = cursor
+                continue
+
+            begin = re.match(r"\\begin\{([^}]+)\}", text[i:])
+            if begin:
+                env = begin.group(1)
+                end_tag = "\\end{" + env + "}"
+                close = text.find(end_tag, i + begin.end())
+                end = n if close == -1 else close + len(end_tag)
+                if env in MATH_ENVS or env == "verbatim":
+                    _mark(mask, i, end)
+                    i = end
+                    continue
+                if env in TABLE_ENVS:
+                    for cursor in range(i, end):
+                        if text[cursor] == "&" and (cursor == 0 or text[cursor - 1] != "\\"):
+                            mask[cursor] = True
+                _mark(mask, i, i + begin.end())
+                i += begin.end()
+                continue
+
+            literal = LITERAL_COMMAND_RX.match(text, i)
+            if literal:
+                end = _consume_command_args(text, literal.end())
+                _mark(mask, i, end)
+                i = end
+                continue
+
             mask[i] = True
-            mask[i + 1] = True  # 转义的字符本身视为"已处理"
-            i += 2; continue
-        if c == "$":
-            in_inline = not in_inline
-            mask[i] = True
-            i += 1; continue
-        if in_inline:
-            mask[i] = True
+            if i + 1 < n:
+                mask[i + 1] = True
+            i += 2
+            continue
+
         i += 1
     return mask
 
 
-def escape_latex(text: str) -> str:
-    """转义数学外、未转义的 % & # _。"""
+def escape_report(text: str) -> tuple[str, dict]:
+    """转义并返回每类字符的改动计数。"""
     mask = _math_mask(text)
     out = []
+    counts = {char: 0 for char in SPECIALS}
     for i, c in enumerate(text):
         if c in SPECIALS and not mask[i]:
             out.append("\\" + c)
+            counts[c] += 1
         else:
             out.append(c)
-    return "".join(out)
+    return "".join(out), {key: value for key, value in counts.items() if value}
+
+
+def escape_latex(text: str) -> str:
+    """转义数学外、未转义的 % & # _。"""
+    return escape_report(text)[0]
 
 
 def check_latex(text: str) -> list:
