@@ -1,6 +1,6 @@
 ---
 name: paper-writing-assistant
-description: 中英文学术论文写作与润色助手（脚本版）：AI 词检查、模板/大纲、改写、写作机检、防御性写作检测、LaTeX 转义。语料可由 lancedb-search 或本地 Markdown/Obsidian 提供。触发：润色、polish、去 AI 味、查语言、填模板、生成大纲、写摘要/引言、cover letter、rebuttal、回复审稿意见、投稿前终检、防御性写作、这段太像 AI 写的。
+description: 中英文学术论文写作与润色助手（脚本版）：AI 词检查、模板/大纲、改写、写作机检、防御性写作检测、LaTeX 转义。语料可由 lancedb-search 或本地 Markdown/Obsidian 提供。触发：润色、polish、去 AI 味、查语言、填模板、生成大纲、写摘要/引言、翻译润色、cover letter、rebuttal、回复审稿意见、投稿前终检、事实核对、防御性写作、这段太像 AI 写的。
 ---
 
 # Paper Writing Assistant
@@ -221,7 +221,7 @@ Quick Mode 可只交 Part 1 + 一句话改动摘要；Deep Mode 三段齐全。�
 - `README.md`：面向人的安装、用法、退出码与维护说明。
 - `config/defaults.json`：语料根目录、DeepSeek 端点/模型/超时；同名环境变量优先。
 - `templates/`：投稿信/审稿回复模板（运行时读取）；`assets/` 放章节模板、profile 大纲、风格与范文。
-- `tests/`：`python -m unittest discover -s tests -v` 跑确定性 CLI 契约测试；有意改行为后先跑 `tests/update_expected.py` 更新期望输出。
+- `tests/`：`python -m unittest discover -s tests -v` 跑契约测试；`tests/run_regression.py` 跑合成回归；`tests/build_regression_local.py` 从本地真实稿件生成 gitignored 回归集；`tests/evaluate_triggers.py --llm` 评测触发与脚本路由。有意改行为后先跑 `tests/update_expected.py`。
 - `agents/openai.yaml`、`lifecycle.yaml`：可选平台元数据，ZCode 忽略；发布到其他平台时按目标 schema 调整。
 
 ## 脚本维护

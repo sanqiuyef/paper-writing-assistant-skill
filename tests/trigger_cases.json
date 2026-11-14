@@ -1,0 +1,29 @@
+{
+  "cases": [
+    {"id": "pos_01", "prompt": "帮我润色这一段，保持原意，不要改数字。", "should_trigger": true, "expected_script": "lint_writing.py"},
+    {"id": "pos_02", "prompt": "这段读起来太像 AI 写的，帮我去掉 AI 味。", "should_trigger": true, "expected_script": "check_ai_style.py"},
+    {"id": "pos_03", "prompt": "查一下这段中文论文的语言问题。", "should_trigger": true, "expected_script": "check_academic_language.py"},
+    {"id": "pos_04", "prompt": "把这段中文翻译成学术英文并润色。", "should_trigger": true, "expected_script": "rewrite_academic_text.py"},
+    {"id": "pos_05", "prompt": "帮我填一下摘要模板。", "should_trigger": true, "expected_script": "fill_section_template.py"},
+    {"id": "pos_06", "prompt": "生成一个方法-实验论文的大纲。", "should_trigger": true, "expected_script": "generate_outline.py"},
+    {"id": "pos_07", "prompt": "写一封 cover letter。", "should_trigger": true, "expected_script": "fill_section_template.py"},
+    {"id": "pos_08", "prompt": "回复审稿意见，写 point-by-point。", "should_trigger": true, "expected_script": "fill_section_template.py"},
+    {"id": "pos_09", "prompt": "投稿前帮我做语言终检。", "should_trigger": true, "expected_script": "lint_writing.py"},
+    {"id": "pos_10", "prompt": "这段是不是太防御了？把自贬和叠甲删掉。", "should_trigger": true, "expected_script": "check_defensive_writing.py"},
+    {"id": "pos_11", "prompt": "检查 LaTeX 里的 % 和 & 转义。", "should_trigger": true, "expected_script": "latex_sanitize.py"},
+    {"id": "pos_12", "prompt": "帮我写论文的引言部分。", "should_trigger": true, "expected_script": "fill_section_template.py"},
+    {"id": "pos_13", "prompt": "这段摘要写得像模板，帮我重排。", "should_trigger": true, "expected_script": "check_ai_style.py"},
+    {"id": "pos_14", "prompt": "对比原文和改稿，看看数字和引用有没有变。", "should_trigger": true, "expected_script": "fact_integrity_check.py"},
+    {"id": "pos_15", "prompt": "我的论文结论部分有没有自我否定？", "should_trigger": true, "expected_script": "check_defensive_writing.py"},
+    {"id": "neg_01", "prompt": "帮我把这张图导出成 SVG。", "should_trigger": false, "expected_script": ""},
+    {"id": "neg_02", "prompt": "查一下明天哈尔滨天气。", "should_trigger": false, "expected_script": ""},
+    {"id": "neg_03", "prompt": "写一个 Python 爬虫抓取网页。", "should_trigger": false, "expected_script": ""},
+    {"id": "neg_04", "prompt": "这篇论文的 DOI 是多少？", "should_trigger": false, "expected_script": ""},
+    {"id": "neg_05", "prompt": "帮我把 Excel 表格按列排序。", "should_trigger": false, "expected_script": ""},
+    {"id": "neg_06", "prompt": "画一个模型结构示意图。", "should_trigger": false, "expected_script": ""},
+    {"id": "neg_07", "prompt": "翻译这段英文邮件成中文。", "should_trigger": false, "expected_script": ""},
+    {"id": "neg_08", "prompt": "帮我写一份项目申报书预算。", "should_trigger": false, "expected_script": ""},
+    {"id": "neg_09", "prompt": "解释一下 Transformer 的注意力机制。", "should_trigger": false, "expected_script": ""},
+    {"id": "neg_10", "prompt": "帮我总结这篇 PDF 的主要内容。", "should_trigger": false, "expected_script": ""}
+  ]
+}

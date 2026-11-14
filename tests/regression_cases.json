@@ -1,0 +1,190 @@
+{
+  "cases": [
+    {
+      "id": "good_method_zh",
+      "text": "本文在松北区21场降雨上测试代理模型。RMSE 为 8.78 mm，PICP 为 0.8465，单场推理耗时 52.4 ms。与 ConvLSTM 相比，误差降低 33%，但高重现期仍有欠覆盖。",
+      "checks": {
+        "defensive": {
+          "section": "body",
+          "verdict": "PASS"
+        },
+        "ai_style": {
+          "verdict": "PASS"
+        },
+        "lint": {
+          "mode": "plain",
+          "language": "zh",
+          "verdict": "PASS"
+        }
+      }
+    },
+    {
+      "id": "good_results_zh",
+      "text": "表 2 给出五个模型的外推指标。KAN-PC 的 RMSE 为 8.78 mm，较 ConvLSTM 低 33%。区间覆盖率在 95% 名义档为 0.892，拒答 10% 后保留域 RMSE 再降 20.4%。",
+      "checks": {
+        "defensive": {
+          "section": "body",
+          "verdict": "PASS"
+        },
+        "ai_style": {
+          "verdict": "PASS"
+        },
+        "lint": {
+          "mode": "plain",
+          "language": "zh",
+          "verdict": "PASS"
+        }
+      }
+    },
+    {
+      "id": "discussion_limitation",
+      "text": "本研究的局限在于样本仅覆盖21场降雨，尚需在更多城市验证。上述边界不改变本文在松北区的结论，但换区后需要重新校准。",
+      "checks": {
+        "defensive": {
+          "section": "discussion",
+          "verdict": "WARN"
+        },
+        "ai_style": {
+          "verdict": "PASS"
+        }
+      }
+    },
+    {
+      "id": "def_self_dep",
+      "text": "遗憾的是，本方法效果有限，仍明显落后于强基线，存在严重不足。",
+      "checks": {
+        "defensive": {
+          "section": "body",
+          "verdict": "FAIL"
+        }
+      }
+    },
+    {
+      "id": "def_negation",
+      "text": "本文不是要提出一个全新的模型，而是要验证现有代理模型的可靠性。这不等于说精度不重要。",
+      "checks": {
+        "defensive": {
+          "section": "body",
+          "verdict": "FAIL"
+        }
+      }
+    },
+    {
+      "id": "def_preempt",
+      "text": "有人可能会问，这是否意味着方法无效。需要指出的是，本文的目标是校准而不是刷新精度。",
+      "checks": {
+        "defensive": {
+          "section": "body",
+          "verdict": "FAIL"
+        }
+      }
+    },
+    {
+      "id": "def_process",
+      "text": "首先我们尝试了三种网络结构，后来发现深层模型并不稳定，接下来改为浅层结构。",
+      "checks": {
+        "defensive": {
+          "section": "body",
+          "verdict": "WARN"
+        }
+      }
+    },
+    {
+      "id": "def_paren",
+      "text": "该配置在测试集上覆盖率达到 0.90（尚未在其他城市验证）。",
+      "checks": {
+        "defensive": {
+          "section": "body",
+          "verdict": "WARN"
+        }
+      }
+    },
+    {
+      "id": "def_first_person",
+      "text": "我们认为该结果说明代理模型可以替代部分迭代求解，笔者发现误差主要来自边界格点。",
+      "checks": {
+        "defensive": {
+          "section": "body",
+          "verdict": "WARN"
+        }
+      }
+    },
+    {
+      "id": "def_hedge_stack",
+      "text": "这可能在一定程度上或许表明模型存在系统性偏差。",
+      "checks": {
+        "defensive": {
+          "section": "body",
+          "verdict": "FAIL"
+        }
+      }
+    },
+    {
+      "id": "def_boundary_repeat",
+      "text": "本文结论仅限于松北区。该参数仅限于本算例。该方法不适用于山区。该适用范围仅限于设计降雨。",
+      "checks": {
+        "defensive": {
+          "section": "body",
+          "verdict": "WARN"
+        }
+      }
+    },
+    {
+      "id": "def_overclaim",
+      "text": "本文首次实现了全面领先，是唯一在所有指标上显著优于基线的模型，证明了方法的必然有效性。",
+      "checks": {
+        "defensive": {
+          "section": "body",
+          "verdict": "WARN"
+        }
+      }
+    },
+    {
+      "id": "ai_template",
+      "text": "首先，城市内涝预报具有重要价值。其次，现有方法存在不足。最后，本文提出新方法。\n\n首先，数据来源需要说明。其次，模型结构需要介绍。最后，实验结果需要讨论。\n\n首先，精度指标需要比较。其次，区间覆盖需要分析。最后，计算成本需要评估。",
+      "checks": {
+        "ai_style": {
+          "verdict": "FAIL"
+        }
+      }
+    },
+    {
+      "id": "ai_uniform",
+      "text": "城市内涝预报需要更快的模型。现有物理模型计算耗时较长。代理模型可以缩短推理时间。",
+      "checks": {
+        "ai_style": {
+          "verdict": "PASS"
+        }
+      }
+    },
+    {
+      "id": "lint_word_md",
+      "text": "**加粗** 文本与 `代码` 残留，不能直接粘进 Word。",
+      "checks": {
+        "lint": {
+          "mode": "word",
+          "language": "zh",
+          "verdict": "FAIL"
+        }
+      }
+    },
+    {
+      "id": "latex_math_protected",
+      "text": "$$x_1=y_1$$ 与 \\cite{model_v1} 均不应被改写。",
+      "checks": {
+        "latex": {
+          "verdict": "PASS"
+        }
+      }
+    },
+    {
+      "id": "latex_unescaped",
+      "text": "95% 的样本 & 5 个变量需要转义。",
+      "checks": {
+        "latex": {
+          "verdict": "FAIL"
+        }
+      }
+    }
+  ]
+}

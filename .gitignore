@@ -11,6 +11,7 @@ assets/corpus/
 assets/knowledge_base/
 assets/profiles/songbei-urban-flood/
 assets/profiles/evidence-base.md
+tests/regression_local/
 tests/.pytest_cache/
 
 # Local backups

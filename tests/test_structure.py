@@ -24,9 +24,9 @@ class StructureTest(unittest.TestCase):
     def test_referenced_files_exist(self) -> None:
         text = (ROOT / "SKILL.md").read_text(encoding="utf-8")
         referenced = {
-            path
-            for path in re.findall(r"`((?:scripts|references|assets|templates|config|tests)/[^`]+)`", text)
-            if "<" not in path and "*" not in path
+            item.split()[0]
+            for item in re.findall(r"`((?:scripts|references|assets|templates|config|tests)/[^`]+)`", text)
+            if "<" not in item and "*" not in item
         }
         missing = [path for path in referenced if not (ROOT / path).exists()]
         self.assertEqual(missing, [], f"SKILL.md 引用了不存在的路径: {missing}")
@@ -45,6 +45,10 @@ class StructureTest(unittest.TestCase):
             "scripts/check_ai_style.py",
             "tests/test_fact_integrity.py",
             "tests/test_ai_style.py",
+            "tests/run_regression.py",
+            "tests/regression_cases.json",
+            "tests/evaluate_triggers.py",
+            "tests/trigger_cases.json",
             "templates/cover_letter_zh.md",
             "assets/profiles/general/sections_zh.md",
             "references/anti_defensive_writing.md",

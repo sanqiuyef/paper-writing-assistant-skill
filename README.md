@@ -128,19 +128,49 @@ stdout 始终是一个 JSON 对象：
 
 同名环境变量优先：`PWA_KB_DIR`、`PWA_VAULT_DIR`、`DEEPSEEK_API_KEY`、`DEEPSEEK_API_URL`、`DEEPSEEK_MODEL`、`DEEPSEEK_TIMEOUT`。
 
-## 测试
+## 测试与评测
+
+### 契约测试
 
 ```bash
 python -X utf8 -m unittest discover -s tests -v
 ```
 
-覆盖 10 个入口、固定输出对照、退出码 1/2/3、结构检查与 MCP 独立性。有意改行为后先运行：
+覆盖 10 个入口、LaTeX 掩蔽、事实核对、防御性检测、AI 结构检测、固定输出对照、退出码 1/2/3、结构检查与 MCP 独立性。有意改行为后先运行：
 
 ```bash
 python -X utf8 tests/update_expected.py
 ```
 
 `tests/test_prompts.md` 提供 4 条人工评测提示词。
+
+### 合成回归集
+
+```bash
+python -X utf8 tests/run_regression.py --verbose
+```
+
+`tests/regression_cases.json` 含 17 条自写段落，覆盖正常方法/结果、真实局限、自贬、叠甲、预演质疑、过程汇报、括号摊底、叠层模糊、边界重复、过度主张、模板腔、Word 残留与 LaTeX 保护。判定写回 `checks.verdict`，改动检测器后用 `--write-expected` 更新并复核。
+
+### 真实论文段落回归（本地）
+
+真实稿件段落不随仓库分发。用本地文件生成 20–30 段回归集：
+
+```bash
+python -X utf8 tests/build_regression_local.py --source 论文初稿.md --limit 30
+python -X utf8 tests/run_regression.py --cases tests/regression_local/cases.json --write-expected
+```
+
+`tests/regression_local/` 已 gitignore。本轮用 v8 稿生成 27 段：防御性 25 PASS / 2 WARN / 0 FAIL，AI 结构 27 PASS，写作机检 20 PASS / 7 WARN / 0 FAIL。
+
+### 触发评测
+
+```bash
+python -X utf8 tests/evaluate_triggers.py          # 词法基线
+python -X utf8 tests/evaluate_triggers.py --llm    # 用 DeepSeek 模拟宿主路由
+```
+
+`tests/trigger_cases.json` 含 15 条应触发、10 条不应触发。当前词法基线 25/25；LLM 模式触发 25/25、脚本路由 15/15。触发词与 description 改动后需同步用例。
 
 ## 维护
 

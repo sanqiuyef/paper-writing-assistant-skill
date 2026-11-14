@@ -136,17 +136,17 @@ def run(args: argparse.Namespace) -> dict:
             }
         )
 
-    if sentence_cv and sentence_cv < 0.22:
+    if len(sentences) >= 5 and sentence_cv and sentence_cv < 0.22:
         issues.append(
             {
                 "severity": "WARN",
                 "code": "AI_UNIFORM_RHYTHM",
                 "message": f"句长变异系数 {sentence_cv:.2f}（<0.22），节奏过于均匀",
-                "examples": [f"句数 {len(sentences)}，平均 {statistics.mean(sentence_lengths):.1f} 字" if sentence_lengths else ""],
+                "examples": [f"句数 {len(sentences)}，平均 {statistics.mean(sentence_lengths):.1f} 字"],
             }
         )
 
-    if specificity_ratio > 0.5:
+    if len(paragraphs) >= 3 and specificity_ratio > 0.5:
         issues.append(
             {
                 "severity": "WARN",

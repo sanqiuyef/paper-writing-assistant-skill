@@ -46,12 +46,20 @@ class AiStyleTest(unittest.TestCase):
         self.assertLess(result["metrics"]["low_specificity_ratio"], 0.5)
 
     def test_uniform_rhythm_warns(self) -> None:
-        text = "城市内涝预报需要更快的模型。现有物理模型计算耗时较长。代理模型可以缩短推理时间。"
+        text = (
+            "城市内涝预报需要更快的模型。现有物理模型计算耗时较长。"
+            "代理模型可以缩短推理时间。网络前向替代了迭代求解。"
+            "该差异来自结构而不是精度换速度。"
+        )
         result = run_check(text)
         self.assertIn("AI_UNIFORM_RHYTHM", codes(result))
 
     def test_low_specificity_warns(self) -> None:
-        text = "城市内涝预报具有重要价值。现有方法仍存在一定不足。本文提出了一种新的思路。"
+        text = (
+            "城市内涝预报具有重要价值。现有方法仍存在一定不足。本文提出了一种新的思路。\n\n"
+            "该方法关注整体流程。它强调结构上的改进。结果需要进一步讨论。\n\n"
+            "未来工作可以继续完善。也可以扩展到更多场景。还需要更多实验支持。"
+        )
         result = run_check(text)
         self.assertIn("AI_LOW_SPECIFICITY", codes(result))
 
