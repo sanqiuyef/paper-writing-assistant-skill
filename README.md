@@ -7,6 +7,7 @@
 | 脚本 | 用途 |
 |:---|:---|
 | `check_academic_language.py` | 语料级 AI 标记词检查，给替换建议 |
+| `check_ai_style.py` | 结构级 AI 风格检测：模板腔、节奏、证据密度、连接词 |
 | `replace_ai_phrases.py` | AI 腔用词检测；`--apply` 插入 `[[建议]]` 占位符 |
 | `fill_section_template.py` | 章节 / 投稿信 / 审稿回复模板，支持 `{{占位符}}` |
 | `generate_outline.py` | 论文大纲与配图方案 |
@@ -76,7 +77,8 @@ python -X utf8 scripts/lint_writing.py --input-file section3.md --mode word --la
 # 4) LaTeX 体检与修复
 python -X utf8 scripts/latex_sanitize.py --input-file draft.tex --fix
 
-# 5) 降 AI 味
+# 5) 降 AI 味：先看结构，再改写
+python -X utf8 scripts/check_ai_style.py --input-file section3.md
 python -X utf8 scripts/rewrite_academic_text.py --input-file section3.md --style academic --kb zh
 
 # 5b) 不外发：只组装提示词，交给宿主 agent 改写
@@ -132,7 +134,7 @@ stdout 始终是一个 JSON 对象：
 python -X utf8 -m unittest discover -s tests -v
 ```
 
-覆盖 9 个入口、固定输出对照、退出码 1/2/3、结构检查与 MCP 独立性。有意改行为后先运行：
+覆盖 10 个入口、固定输出对照、退出码 1/2/3、结构检查与 MCP 独立性。有意改行为后先运行：
 
 ```bash
 python -X utf8 tests/update_expected.py
@@ -163,13 +165,14 @@ paper-writing-assistant/
 │   ├── corpus.example/        # 范文结构示例（不含第三方原文）
 │   └── corpus/                # 个人范文（gitignore）
 ├── references/                # 写作规范、章节 playbook、期刊风格、去 AI 味手册
-├── scripts/                   # 9 入口 + 共享模块 + 规则引擎 + 词库/防御性规则
+├── scripts/                   # 10 入口 + 共享模块 + 规则引擎 + 词库/防御性规则
 └── tests/                     # 契约测试、期望输出、人工评测提示词
 ```
 
 ## 已知边界
 
 - `lint_writing.py` 与 `check_defensive_writing.py` 是启发式检测：词表与正则只提示可能性，误报/漏报都存在，判定以整节或全文为准，最终由作者复核。
+- `check_ai_style.py` 检测段落结构（模板网格、节奏、证据密度），不判断文本是否由 AI 生成；FAIL 只代表结构高度模板化。
 - 防御性检测不判断“这条局限是否必须报告”。真实局限在讨论章保留一次是合规写作，`--section discussion` 会把自贬类降为 WARN。
 - `rewrite_academic_text.py` 只保证不改动数值 token 并标出新增数值；语义等价、引用归属与单位一致性仍需人工核对。
 - 默认面向方法-实验类论文；人文社科、纯综述使用时，把“指标、实验、对照”等规则改写为对应的论证单位（论点、材料、案例、比较对象）。

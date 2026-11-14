@@ -26,6 +26,7 @@ python -X utf8 scripts/<脚本名>.py
 | 脚本 | 用途 | 关键参数 | 输出要点 |
 |:---|:---|:---|:---|
 | `check_academic_language.py` | 语料级 AI 标记词检查，给替换建议 | `--text`/`--input-file`、`--language auto/zh/en` | `data.status`（clean/issues_found）、`data.findings[]`（pattern/context/position） |
+| `check_ai_style.py` | 结构级 AI 风格检测：模板腔、节奏均质、证据密度、连接词堆叠、AI 词密度 | `--text`/`--input-file`、`--language` | `data.verdict`、`metrics`、`issues[]`；FAIL=模板网格，其余多为 WARN/INFO |
 | `replace_ai_phrases.py` | AI 腔用词检测；`--apply` 时插入 `[[建议]]` 占位符 | `--text`/`--input-file`、`--language`、`--apply` | `data.details[]`、`data.result_text`；默认 dry-run |
 | `fill_section_template.py` | 取章节/投稿信/审稿回复模板，注入 `{{占位符}}` | `--section`、`--params`/`--params-file`、`--language`、`--paper-type`、`--profile` | `data.template`、`data.template_id`、`data.evidence_basis` |
 | `generate_outline.py` | 生成章节结构与配图方案 | `--language`、`--paper-type`、`--profile` | `data.sections[]`、`data.figures[]` |
@@ -50,7 +51,8 @@ python -X utf8 scripts/lint_writing.py --input-file 第3节.md --mode word --lan
 # 4) LaTeX 体检并修复
 python -X utf8 scripts/latex_sanitize.py --input-file draft.tex --fix
 
-# 5) 降 AI 味：先用 lancedb-search（可选）或 --kb 取范文，再传入改写
+# 5) 降 AI 味：先看结构，再取范文改写
+python -X utf8 scripts/check_ai_style.py --input-file 第3节.md
 python -X utf8 scripts/rewrite_academic_text.py --input-file 第3节.md --style academic --kb zh --reference-file 范文片段.md
 
 # 5b) 不外发：只组装提示词，交给宿主 agent 改写
@@ -71,7 +73,7 @@ python -X utf8 scripts/check_defensive_writing.py --input-file 第3节.md --sect
 |:---|:---|
 | 中文段落润色 | `lint_writing` 定位问题 → agent 改写 → `check_academic_language` 查 AI 词 → `lint_writing` 复检 |
 | 英文润色 / 中译英 | `lint_writing --mode latex`（若为 LaTeX）→ agent 改写 → `latex_sanitize --fix` → 复检 |
-| 降 AI 味 | `rewrite_academic_text --kb zh`（或 `--reference-file` 传 lancedb 命中段落）→ `fact_integrity_check` 核对数字/引用 → agent 按 `changes/risks` 复核 → `lint_writing` |
+| 降 AI 味 | `check_ai_style` 看结构问题 → `rewrite_academic_text --kb zh`（或 `--reference-file` 传 lancedb 命中段落）→ `fact_integrity_check` 核对数字/引用 → agent 按 `changes/risks` 复核 → `lint_writing` |
 | 防御性写作清理 | `check_defensive_writing --section` 定位 → agent 按 `suggestion` 逐条改写（真实边界保留一次）→ 复检；摘要/结论必跑 |
 | 写某章节 | `generate_outline` 取结构 → `fill_section_template --section` 取骨架 → agent 起草 → 机检 |
 | 投稿信 / 审稿回复 | `fill_section_template --section cover_letter/rebuttal` → agent 填充 → `lint_writing` |
@@ -104,6 +106,7 @@ Stage 0 问询 → 起草/改写 → 机检门控 → AI 读稿自审（≤3 轮
 - `data.verdict=WARN` → 逐项评估，决定是否回改
 - **防御性检测**：摘要、引言、结论**必跑**；正文其他章节在涉及局限、对比或负结果时跑。FAIL 级（自贬、否定叠甲、预演质疑、叠层模糊、摘要/结论开头自贬）必须改；WARN 级（过程汇报、括号摊底、第一人称、边界重复、反向夸大）逐条判断
 - **事实核对**：只要有原文/改稿对，必须跑 `fact_integrity_check.py --original 原稿 --revised 改稿`；数值缺失/新增、单位变化、引用增减、结论方向反转均为 FAIL，必须回改；数值顺序变化为 WARN，核对指代是否受影响
+- **结构风格（可选）**：被指“读着像 AI/模板腔”或改写前，跑 `check_ai_style.py` 看段落结构；`AI_TEMPLATE_GRID`（连续序数开头 + 句数一致）为 FAIL，必须重排段落；`AI_UNIFORM_RHYTHM`/`AI_LOW_SPECIFICITY` 为 WARN，结合证据判断；AI 词密度仅 INFO
 - 同一轮依次跑 `check_academic_language.py` 做语料级 AI 词检查；LaTeX 载体加 `latex_sanitize.py --fix`
 - 门控结论以整节或全文为准：`lint_writing` 按密度判定，几百字片段里一两处符号就可能越线
 - 防御性检测只报不改：真实边界按证据保留一次并正面表述，删除防御不得反向升级为“首次/唯一/全面领先”

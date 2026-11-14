@@ -78,6 +78,7 @@ class ScriptContractTest(unittest.TestCase):
     def test_help_every_entrypoint(self) -> None:
         for script in (
             "check_academic_language.py",
+            "check_ai_style.py",
             "replace_ai_phrases.py",
             "fill_section_template.py",
             "generate_outline.py",
