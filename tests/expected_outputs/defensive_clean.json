@@ -1,0 +1,10 @@
+{
+  "verdict": "PASS",
+  "fail": 0,
+  "warn": 0,
+  "info": 0,
+  "section": "body",
+  "chars": 28,
+  "issues": [],
+  "note": "检测器只报不改。真实边界保留一次并正面表述；删除防御不得反向夸大主张。"
+}

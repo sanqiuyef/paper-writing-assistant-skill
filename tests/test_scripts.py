@@ -72,6 +72,7 @@ class ScriptContractTest(unittest.TestCase):
             "rewrite_academic_text.py",
             "lint_writing.py",
             "latex_sanitize.py",
+            "check_defensive_writing.py",
         ):
             with self.subTest(script=script):
                 result = run_script(script, ["--help"])

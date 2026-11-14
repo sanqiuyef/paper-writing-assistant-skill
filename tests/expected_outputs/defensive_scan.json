@@ -1,0 +1,45 @@
+{
+  "verdict": "FAIL",
+  "fail": 3,
+  "warn": 0,
+  "info": 0,
+  "section": "abstract",
+  "chars": 36,
+  "issues": [
+    {
+      "severity": "FAIL",
+      "code": "DEF_SELF_DEPRECATION",
+      "line": 1,
+      "count": 2,
+      "message": "自我削弱式评价（自我削弱/自贬）",
+      "examples": [
+        "本文方法效果有限，仍明显落后于基线。有人可能会问，这是否意味着方法无效？",
+        "本文方法效果有限，仍明显落后于基线。有人可能会问，这是否意味着方法无效？"
+      ],
+      "suggestion": "删除自贬或改为可核验的结果；真实边界只保留一次，并改写为正面范围"
+    },
+    {
+      "severity": "FAIL",
+      "code": "DEF_PREEMPT_QUESTION",
+      "line": 1,
+      "count": 1,
+      "message": "替审稿人预演质疑并自答（预演质疑/自答）",
+      "examples": [
+        "本文方法效果有限，仍明显落后于基线。有人可能会问，这是否意味着方法无效？"
+      ],
+      "suggestion": "删掉假想提问，直接陈述事实、证据与适用范围；审稿意见到达后再回应"
+    },
+    {
+      "severity": "FAIL",
+      "code": "DEF_OPENING_DEPRECATION",
+      "line": 1,
+      "count": 1,
+      "message": "摘要/结论开头出现自我削弱或预演质疑",
+      "examples": [
+        "本文方法效果有限，仍明显落后于基线。"
+      ],
+      "suggestion": "开头先建立问题、缺口、做法与最硬结果；局限只在后文出现一次"
+    }
+  ],
+  "note": "检测器只报不改。真实边界保留一次并正面表述；删除防御不得反向夸大主张。"
+}

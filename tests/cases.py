@@ -49,6 +49,23 @@ CASES = [
         "exit_code": 1,
     },
     {
+        "name": "defensive_scan",
+        "script": "check_defensive_writing.py",
+        "args": [
+            "--text",
+            "本文方法效果有限，仍明显落后于基线。有人可能会问，这是否意味着方法无效？",
+            "--section",
+            "abstract",
+        ],
+        "exit_code": 1,
+    },
+    {
+        "name": "defensive_clean",
+        "script": "check_defensive_writing.py",
+        "args": ["--text", "本文方法在21场降雨上的 RMSE 为 8.78 mm。"],
+        "exit_code": 0,
+    },
+    {
         "name": "latex_fix",
         "script": "latex_sanitize.py",
         "args": ["--text", "95% 的样本 & 5 个变量", "--fix"],

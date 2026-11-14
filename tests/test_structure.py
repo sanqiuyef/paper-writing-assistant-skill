@@ -39,6 +39,8 @@ class StructureTest(unittest.TestCase):
             "agents/openai.yaml",
             "tests/test_scripts.py",
             "tests/expected_outputs/check_zh.json",
+            "scripts/check_defensive_writing.py",
+            "scripts/defensive_patterns.json",
             "templates/cover_letter_zh.md",
             "assets/profiles/general/sections_zh.md",
             "references/anti_defensive_writing.md",

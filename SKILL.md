@@ -21,7 +21,7 @@ python -X utf8 scripts\<脚本名>.py
 
 （要求 Python ≥ 3.10；Windows 控制台建议加 `-X utf8` 避免 GBK 乱码。）
 
-通用约定：短文本用 `--text`，长文本用 `--input-file <路径>`（`-` 表示 stdin）；stdout 只输出一个 JSON 对象 `{"ok": true, "tool": "...", "data": {...}}`，诊断走 stderr。退出码：`0` 成功（lint/LaTeX 另有 PASS）；`1` 门控不通过（lint=FAIL，latex=存在 FAIL）；`2` 参数或输入错误；`3` 运行时错误（模板缺失、语料无命中、API key 缺失、外部调用失败）。
+通用约定：短文本用 `--text`，长文本用 `--input-file <路径>`（`-` 表示 stdin）；stdout 只输出一个 JSON 对象 `{"ok": true, "tool": "...", "data": {...}}`，诊断走 stderr。退出码：`0` 成功（lint/LaTeX/防御性检测另有 PASS）；`1` 门控不通过（lint=FAIL，latex=存在 FAIL，defensive=FAIL）；`2` 参数或输入错误；`3` 运行时错误（模板缺失、语料无命中、API key 缺失、外部调用失败）。
 
 | 脚本 | 用途 | 关键参数 | 输出要点 |
 |:---|:---|:---|:---|
@@ -31,6 +31,7 @@ python -X utf8 scripts\<脚本名>.py
 | `generate_outline.py` | 生成章节结构与配图方案 | `--language`、`--paper-type`、`--profile` | `data.sections[]`、`data.figures[]` |
 | `rewrite_academic_text.py` | DeepSeek 降 AI 味改写，带数字编造防线 | `--text`/`--input-file`、`--style`、`--language`、`--reference-texts`/`--reference-file`、`--corpus`、`--kb`、`--kb-dir`、`--temperature` | `data.rewritten`、`changes`、`preserved_facts`、`risks`；需 `DEEPSEEK_API_KEY` |
 | `lint_writing.py` | 确定性写作质量门控，返回 PASS/WARN/FAIL | `--text`/`--input-file`、`--mode plain/word/docx/markdown/latex`、`--language` | `data.verdict`、`fail/warn/info`、`issues[]`；**退出码 1 = FAIL，不是执行失败** |
+| `check_defensive_writing.py` | 防御性写作检测：自贬、叠甲、预演质疑、过程汇报、括号摊底、叠层模糊、边界重复、反向夸大 | `--text`/`--input-file`、`--section body/abstract/introduction/results/discussion/conclusion`、`--strict` | `data.verdict`、`issues[]`（severity/code/line/count/examples/suggestion）；**退出码 1 = FAIL** |
 | `latex_sanitize.py` | LaTeX 转义体检；`--fix` 返回修复稿 | `--text`/`--input-file`、`--fix` | `data.problems[]`（severity/message）、`fixed_text`、`changed` |
 
 常用示例：
@@ -50,6 +51,9 @@ python -X utf8 scripts\latex_sanitize.py --input-file draft.tex --fix
 
 # 5) 降 AI 味：先用 lancedb-search 取范文，再传入改写
 python -X utf8 scripts\rewrite_academic_text.py --input-file 第3节.md --style academic --kb zh --reference-file 范文片段.md
+
+# 6) 防御性写作检测（摘要/结论建议加 --section；终稿可加 --strict）
+python -X utf8 scripts\check_defensive_writing.py --input-file 第3节.md --section results
 ```
 
 脚本之间没有隐式状态：每个脚本单独起进程、单独输出 JSON。需要组合时由 agent 自己串联，例如“先 lint 定位问题段 → 再 rewrite 该段 → 再 lint 复检”。
@@ -61,6 +65,7 @@ python -X utf8 scripts\rewrite_academic_text.py --input-file 第3节.md --style 
 | 中文段落润色 | `lint_writing` 定位问题 → agent 改写 → `check_academic_language` 查 AI 词 → `lint_writing` 复检 |
 | 英文润色 / 中译英 | `lint_writing --mode latex`（若为 LaTeX）→ agent 改写 → `latex_sanitize --fix` → 复检 |
 | 降 AI 味 | `rewrite_academic_text --kb zh`（或 `--reference-file` 传 lancedb 命中段落）→ agent 按 `changes/risks` 复核 → `lint_writing` |
+| 防御性写作清理 | `check_defensive_writing --section` 定位 → agent 按 `suggestion` 逐条改写（真实边界保留一次）→ 复检；摘要/结论必跑 |
 | 写某章节 | `generate_outline` 取结构 → `fill_section_template --section` 取骨架 → agent 起草 → 机检 |
 | 投稿信 / 审稿回复 | `fill_section_template --section cover_letter/rebuttal` → agent 填充 → `lint_writing` |
 | 投稿前语言终检 | `lint_writing` → `latex_sanitize`（LaTeX）/ Word 纯文本检查 → 人工确认项清单 |
@@ -84,12 +89,14 @@ Stage 0 问询 → 起草/改写 → 机检门控 → AI 读稿自审（≤3 轮
 
 ### 机检门控（必做）
 
-改写完成后**必须**运行 `lint_writing.py`：
+改写完成后**必须**运行 `lint_writing.py`，并运行 `check_defensive_writing.py`：
 
 - `data.verdict=FAIL`（退出码 1）→ 必须修复后复检，不得假装通过、不得伪造检查结果
 - `data.verdict=WARN` → 逐项评估，决定是否回改
+- **防御性检测**：摘要、引言、结论**必跑**；正文其他章节在涉及局限、对比或负结果时跑。FAIL 级（自贬、否定叠甲、预演质疑、叠层模糊、摘要/结论开头自贬）必须改；WARN 级（过程汇报、括号摊底、第一人称、边界重复、反向夸大）逐条判断
 - 同一轮依次跑 `check_academic_language.py` 做语料级 AI 词检查；LaTeX 载体加 `latex_sanitize.py --fix`
 - 门控结论以整节或全文为准：`lint_writing` 按密度判定，几百字片段里一两处符号就可能越线
+- 防御性检测只报不改：真实边界按证据保留一次并正面表述，删除防御不得反向升级为“首次/唯一/全面领先”
 
 ### AI 读稿自审（机器查不出的，靠读，最多 3 轮）
 
@@ -205,6 +212,7 @@ Stage 0 问询 → 起草/改写 → 机检门控 → AI 读稿自审（≤3 轮
 
 - `scripts/writing_lint.py`、`scripts/latex_clean.py` 为规则引擎（自 scipilot-writing-skill v1.0.0 融合，MIT License），一般不改；改规则需同步 `scripts/` 内两份副本的行为说明。
 - `scripts/_lexicon.json` 为替换词库（中文 45 条 / 英文 78 条），由原实现导出；增删词条后直接改 JSON，不需改代码。
+- `scripts/defensive_patterns.json` 为防御性写作规则（类别、正则、严重度、改法）；增删模式后同步 `tests/expected_outputs/defensive_*`。
 - `scripts/_common.py` 集中路径、语言判定、模板路由与数字防线；`scripts/_kb.py` 语料检索；`scripts/_rewrite.py` 提示词组装与 DeepSeek 调用。
 
 ## Credits
