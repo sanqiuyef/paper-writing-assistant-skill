@@ -1,0 +1,9 @@
+{
+  "section": "abstract",
+  "language": "zh",
+  "paper_type": "general",
+  "profile": "",
+  "template_id": "general",
+  "evidence_basis": "通用 IMRaD 与中文期刊常见结构的保守交集",
+  "template": "## 1. 摘要\n\n按“背景—问题—方法/材料—主要发现—结论与边界”组织。结果句必须使用已提供或可核验的证据；没有结果时保留 `{待补结果}`，不写推测性数字。摘要避免展开文献综述，也不引入正文未出现的贡献。"
+}

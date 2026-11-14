@@ -1,0 +1,16 @@
+{
+  "problem_count": 2,
+  "problems": [
+    {
+      "severity": "FAIL",
+      "message": "未转义 '%' ×1 → 应为 '\\%'"
+    },
+    {
+      "severity": "WARN",
+      "message": "未转义 '&' ×1 → 应为 '\\&'"
+    }
+  ],
+  "note": "建议正文中写 \\% \\& \\# \\_；命令参数（如 \\cite{a_b}）内的下划线通常无害。",
+  "fixed_text": "95\\% 的样本 \\& 5 个变量",
+  "changed": true
+}

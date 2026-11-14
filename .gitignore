@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.DS_Store
+Thumbs.db
+
+# Personal corpora and generated outputs (never publish third-party full text)
+assets/corpus/
+assets/knowledge_base/
+assets/profiles/songbei-urban-flood/
+assets/profiles/evidence-base.md
+tests/.pytest_cache/
+
+# Local backups
+*.bak
+*.bak-*

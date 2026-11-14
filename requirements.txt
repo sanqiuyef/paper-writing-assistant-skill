@@ -1,0 +1,2 @@
+# Only rewrite_academic_text.py needs this; the other scripts use the standard library.
+requests>=2.31

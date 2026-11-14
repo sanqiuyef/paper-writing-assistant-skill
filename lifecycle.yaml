@@ -1,0 +1,12 @@
+# Optional lifecycle metadata. ZCode ignores this file; adapt the hook schema
+# to the target platform before publishing. Hooks are intentionally read-only.
+version: 1
+name: paper-writing-assistant
+install:
+  - id: check-python
+    description: 要求 Python >= 3.10
+    run: python -c "import sys; assert sys.version_info >= (3, 10)"
+update:
+  - id: rerun-contract-tests
+    description: 更新后运行确定性 CLI 契约测试
+    run: python -m unittest discover -s tests

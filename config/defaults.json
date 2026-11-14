@@ -1,0 +1,16 @@
+{
+  "version": "0.3.0",
+  "python": ">=3.10",
+  "vault_dir": "",
+  "deepseek": {
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "model": "deepseek-chat",
+    "timeout": 120
+  },
+  "exit_codes": {
+    "0": "成功（lint/LaTeX 为 PASS 或无 FAIL）",
+    "1": "门控不通过（lint=FAIL，latex=存在 FAIL）",
+    "2": "参数或输入错误",
+    "3": "运行时错误（资产缺失、语料无命中、缺 API key、外部调用失败）"
+  }
+}

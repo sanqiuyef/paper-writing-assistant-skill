@@ -1,0 +1,18 @@
+{
+  "title": "{Paper Title}",
+  "sections": [
+    {"title": "Abstract", "fields": ["Context", "Research problem", "Methods or materials", "Main findings", "Conclusion and scope"]},
+    {"title": "1. Introduction", "paragraphs": ["Problem context", "Prior progress", "Remaining gap", "Research question", "Contributions"]},
+    {"title": "2. Related Work", "subsections": ["Research streams", "Major methods or positions", "Evidence differences", "Positioning"]},
+    {"title": "3. Methodology", "subsections": ["Study design", "Data or materials", "Analysis", "Quality control", "Ethics and reproducibility"]},
+    {"title": "4. Experiments", "paragraphs": ["Study objects", "Comparisons or scenarios", "Metrics", "Procedure"]},
+    {"title": "5. Results", "sections": ["Results by research question", "Supplementary analysis", "Robustness or uncertainty"]},
+    {"title": "6. Discussion", "topics": ["Interpretation", "Comparison with prior work", "Implications", "Limitations", "Scope"]},
+    {"title": "7. Conclusion", "points": ["Answer to the research question", "Contributions", "Boundaries and future work"]}
+  ],
+  "figures": [
+    {"id": "Figure 1", "type": "Study design or conceptual framework", "section": "Methodology"},
+    {"id": "Table 1", "type": "Data, material, or sample description", "section": "Methodology"},
+    {"id": "Figures/Tables 2+", "type": "Evidence aligned with each research question", "section": "Results"}
+  ]
+}

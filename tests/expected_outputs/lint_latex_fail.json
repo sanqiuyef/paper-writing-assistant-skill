@@ -1,0 +1,27 @@
+{
+  "verdict": "FAIL",
+  "fail": 1,
+  "warn": 1,
+  "info": 0,
+  "mode": "latex",
+  "language": "zh",
+  "issues": [
+    {
+      "severity": "FAIL",
+      "code": "LATEX_UNESCAPED",
+      "line": 1,
+      "count": 1,
+      "message": "未转义 '%' ×1（会注释掉整行）；应写 '\\%'",
+      "examples": []
+    },
+    {
+      "severity": "WARN",
+      "code": "LATEX_MARKDOWN",
+      "line": 1,
+      "count": 1,
+      "message": "LaTeX 中混入 Markdown ×1（如 '**加粗**'）；加粗应用 \\textbf{}，标题用 \\section{}",
+      "examples": []
+    }
+  ],
+  "note": "FAIL 项必须修复后复检；WARN 项评估后决定是否回改；INFO 项仅提示。退出码 1 表示 FAIL，不是执行失败。"
+}

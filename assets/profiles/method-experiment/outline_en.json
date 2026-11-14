@@ -1,0 +1,20 @@
+{
+  "title": "{Specific Problem Addressed by the Method or Model}",
+  "sections": [
+    {"title": "Abstract", "fields": ["Task and gap", "Method", "Data and comparisons", "Key quantitative results", "Scope"]},
+    {"title": "1. Introduction", "paragraphs": ["Scientific or practical problem", "Limitations of existing methods", "Testable gap", "Core idea", "Contributions"]},
+    {"title": "2. Related Work", "subsections": ["Conventional methods", "Data-driven or peer methods", "Physics/prior integration", "Generalization and uncertainty", "Positioning"]},
+    {"title": "3. Methodology", "subsections": ["Problem formulation", "Data generation and preprocessing", "Overall architecture", "Key components", "Objectives and constraints", "Training and inference", "Complexity and reproducibility"]},
+    {"title": "4. Experiments", "paragraphs": ["Datasets and splits", "Baselines", "Metrics", "Training settings", "Ablations", "Generalization/robustness/uncertainty tests"]},
+    {"title": "5. Results", "sections": ["Main comparison", "Ablations", "Robustness and generalization", "Error analysis", "Efficiency", "Interpretability or uncertainty"]},
+    {"title": "6. Discussion", "topics": ["Mechanism", "Failure conditions", "Comparison with prior work", "External validity", "Limitations"]},
+    {"title": "7. Conclusion", "points": ["Answer", "Evidence-backed contributions", "Boundaries"]}
+  ],
+  "figures": [
+    {"id": "Figure 1", "type": "Method overview", "section": "Methodology"},
+    {"id": "Figure 2", "type": "Key component or architecture", "section": "Methodology"},
+    {"id": "Table 1", "type": "Data and experimental settings", "section": "Experiments"},
+    {"id": "Table 2", "type": "Main baseline comparison", "section": "Results"},
+    {"id": "Figures/Tables 3+", "type": "Ablation, robustness, error, and efficiency evidence", "section": "Results"}
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "title": "Research Progress, Evidence Gaps, and Future Directions in {Topic}",
+  "sections": [
+    {"title": "Abstract", "fields": ["Review scope", "Materials and method", "Taxonomy", "Consensus and disagreement", "Research agenda"]},
+    {"title": "1. Introduction", "paragraphs": ["Importance", "Limits of prior reviews", "Review questions", "Scope and contributions"]},
+    {"title": "2. Related Work", "subsections": ["Concepts and terminology", "Development stages", "Comparison of prior reviews", "Analytical framework"]},
+    {"title": "3. Methodology", "subsections": ["Databases and dates", "Search strategy", "Eligibility criteria", "Screening", "Data extraction", "Quality or bias assessment"]},
+    {"title": "4. Experiments", "paragraphs": ["Evidence coding", "Classification dimensions", "Quantitative/qualitative synthesis", "Consistency checks"]},
+    {"title": "5. Results", "sections": ["Study distribution", "Theme taxonomy", "Method comparison", "Evidence consistency", "Open problems"]},
+    {"title": "6. Discussion", "topics": ["Cross-study synthesis", "Strength of evidence", "Method limitations", "Review limitations", "Priority agenda"]},
+    {"title": "7. Conclusion", "points": ["Main consensus", "Critical gaps", "Actionable research directions"]}
+  ],
+  "figures": [
+    {"id": "Figure 1", "type": "Search and screening flow", "section": "Methodology"},
+    {"id": "Table 1", "type": "Characteristics of included studies", "section": "Results"},
+    {"id": "Figures/Tables 2+", "type": "Theme distribution, method comparison, and evidence gaps", "section": "Results"}
+  ]
+}

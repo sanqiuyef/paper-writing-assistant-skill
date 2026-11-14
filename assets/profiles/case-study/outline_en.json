@@ -1,0 +1,19 @@
+{
+  "title": "Analysis and Application of {Problem} in {Study Area or Engineering Object}",
+  "sections": [
+    {"title": "Abstract", "fields": ["Practical problem", "Study area and method", "Scenarios or data", "Main spatial/temporal findings", "Management implication"]},
+    {"title": "1. Introduction", "paragraphs": ["Real-world risk", "Prior applications", "Local or scenario gap", "Objectives"]},
+    {"title": "2. Related Work", "subsections": ["Problem mechanisms", "Common models or assessments", "Case evidence", "Positioning"]},
+    {"title": "3. Methodology", "subsections": ["Study area", "Data sources and quality", "Model or workflow", "Calibration and validation", "Scenario design", "Risk or performance indicators"]},
+    {"title": "4. Experiments", "paragraphs": ["Reference scenario", "Comparison scenarios", "Parameters and boundaries", "Validation evidence", "Sensitivity analysis"]},
+    {"title": "5. Results", "sections": ["Model validation", "Spatiotemporal evolution", "Scenario differences", "Key drivers", "Risk zoning or prioritization"]},
+    {"title": "6. Discussion", "topics": ["Mechanisms", "Engineering or governance implications", "Cross-case comparison", "Data and model limitations", "Transfer conditions"]},
+    {"title": "7. Conclusion", "points": ["Main case findings", "Actionable recommendations", "Non-transferable boundaries"]}
+  ],
+  "figures": [
+    {"id": "Figure 1", "type": "Study area and data map", "section": "Methodology"},
+    {"id": "Figure 2", "type": "Model or analysis workflow", "section": "Methodology"},
+    {"id": "Table 1", "type": "Data, parameters, and scenarios", "section": "Experiments"},
+    {"id": "Figures/Tables 3+", "type": "Spatiotemporal results, scenario comparison, and risk zoning", "section": "Results"}
+  ]
+}

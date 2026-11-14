@@ -1,0 +1,7 @@
+# Optional Codex/OpenAI UI metadata. ZCode ignores this file; keep it in sync
+# with SKILL.md when publishing to a platform that consumes agents/openai.yaml.
+name: paper-writing-assistant
+display_name: Paper Writing Assistant
+version: 0.3.0
+description: 中英文论文写作、润色、机检与降 AI 味（脚本版）
+entrypoint: SKILL.md

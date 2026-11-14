@@ -1,0 +1,25 @@
+{
+  "status": "issues_found",
+  "message": "检测到 3 处可能的 AI 标记词",
+  "language": "zh",
+  "findings": [
+    {
+      "pattern": "值得注意的是",
+      "suggested_replacement": "（直接陈述事实）",
+      "context": "...近年来，值得注意的是，本文提出的方法具有重要价值。...",
+      "position": 4
+    },
+    {
+      "pattern": "具有重要价值",
+      "suggested_replacement": "（直接说目的或结果）",
+      "context": "...近年来，值得注意的是，本文提出的方法具有重要价值。...",
+      "position": 18
+    },
+    {
+      "pattern": "近年来",
+      "suggested_replacement": "2021年以来 / 近五年来",
+      "context": "...近年来，值得注意的是，本文提出的方法具有重要价...",
+      "position": 0
+    }
+  ]
+}

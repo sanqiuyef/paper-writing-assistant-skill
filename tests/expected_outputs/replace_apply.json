@@ -1,0 +1,19 @@
+{
+  "original_length": 18,
+  "replacements_made": 2,
+  "applied": true,
+  "details": [
+    {
+      "pattern": "值得注意的是",
+      "replaced_with": "直接陈述事实",
+      "count": 1
+    },
+    {
+      "pattern": "具有重要价值",
+      "replaced_with": "直接说目的或结果",
+      "count": 1
+    }
+  ],
+  "result_text": "[[直接陈述事实]]，本文方法[[直接说目的或结果]]。",
+  "note": "已按 --apply 执行替换，[[建议]] 为待人工确认的占位符。"
+}
